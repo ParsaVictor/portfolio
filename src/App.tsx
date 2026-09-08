@@ -6,6 +6,7 @@ import Navbar from "./components/Navbar";
 import SectionRail from "./components/SectionRail";
 import Hero from "./components/Hero";
 import Marquee from "./components/Marquee";
+import ChapterBreak from "./components/ChapterBreak";
 import AboutStage from "./components/AboutStage";
 import VisionRail from "./components/VisionRail";
 import DataConsole from "./components/DataConsole";
@@ -13,9 +14,12 @@ import WebStack from "./components/WebStack";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 import { useSmoothScroll } from "./scroll/useSmoothScroll";
+import { useLang } from "./i18n/LangProvider";
+import { STAGE_COLORS } from "./config";
 
 export default function App() {
   const [loading, setLoading] = useState(true);
+  const { t } = useLang();
   useSmoothScroll(!loading);
 
   return (
@@ -40,9 +44,13 @@ export default function App() {
         <Hero />
         <Marquee />
         <AboutStage />
+        <ChapterBreak index={t.cv.index} label={t.cv.kicker} accent={STAGE_COLORS.cv} />
         <VisionRail />
+        <ChapterBreak index={t.data.index} label={t.data.kicker} accent={STAGE_COLORS.data} />
         <DataConsole />
+        <ChapterBreak index={t.web.index} label={t.web.kicker} accent={STAGE_COLORS.web} />
         <WebStack />
+        <ChapterBreak index="04" label={t.contact.kicker} accent={STAGE_COLORS.contact} />
         <Contact />
       </main>
       <Footer />

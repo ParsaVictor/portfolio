@@ -27,6 +27,10 @@ export default function ParticleCanvas({ active }: { active: boolean }) {
       const s = new PS({ canvas, colors, reducedMotion: reduced, mobile });
       sys = s;
       s.resize(window.innerWidth, window.innerHeight);
+      if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__mpk = s;
+      // Paint one frame immediately: a background tab (or any context where rAF
+      // is parked) should still show the form rather than an empty canvas.
+      s.update(16);
 
       const onResize = () => s.resize(window.innerWidth, window.innerHeight);
       const onPointer = (e: PointerEvent) =>

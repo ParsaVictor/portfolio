@@ -23,12 +23,16 @@ export function useSmoothScroll(enabled = true) {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     lenis = new Lenis({
-      duration: reduce ? 0.1 : 1.15,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      // autoRaf off is the whole point: Lenis must NOT run its own loop, or the
+      // page is advanced twice per frame and every scroll-linked effect judders.
+      autoRaf: false,
+      lerp: reduce ? 1 : 0.085,
       smoothWheel: !reduce,
-      touchMultiplier: 1.5,
+      wheelMultiplier: 1,
+      touchMultiplier: 1.6,
     });
 
+    // one frame, one source of truth: Lenis pushes straight into ScrollTrigger
     lenis.on("scroll", ScrollTrigger.update);
     if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__lenis = lenis;
 
@@ -51,14 +55,19 @@ export function useSmoothScroll(enabled = true) {
       },
     });
 
-    const onResize = () => ScrollTrigger.refresh();
-    window.addEventListener("resize", onResize);
-    // fonts / images can shift layout — refresh once settled
-    const rt = window.setTimeout(() => ScrollTrigger.refresh(), 1200);
+    const remeasure = () => {
+      lenis?.resize();
+      ScrollTrigger.refresh();
+    };
+    window.addEventListener("resize", remeasure);
+    document.fonts?.ready.then(remeasure);
+    // Fonts, lazy images and the WebGL canvas all settle at different moments and
+    // each one can shift layout under a trigger, so remeasure on a stagger.
+    const timers = [300, 900, 2000, 3500].map((ms) => window.setTimeout(remeasure, ms));
 
     return () => {
-      window.clearTimeout(rt);
-      window.removeEventListener("resize", onResize);
+      timers.forEach(window.clearTimeout);
+      window.removeEventListener("resize", remeasure);
       st.kill();
       gsap.ticker.remove(tick);
       lenis?.destroy();

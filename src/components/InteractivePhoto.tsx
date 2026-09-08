@@ -85,7 +85,7 @@ export default function InteractivePhoto({ src }: { src: string }) {
         <Corner className="bottom-3 start-3 border-b-2 border-s-2" />
         <Corner className="bottom-3 end-3 border-b-2 border-e-2" />
 
-        <span className="absolute end-4 top-4 rounded-full border border-cyanx/50 bg-black/50 px-3 py-1 font-mono text-[10px] tracking-widest text-cyanx backdrop-blur ltr">
+        <span className="absolute end-3 top-3 rounded-full border border-cyanx/50 bg-black/50 px-2 py-0.5 font-mono text-[9px] tracking-widest text-cyanx backdrop-blur sm:end-4 sm:top-4 sm:px-3 sm:py-1 sm:text-[10px] ltr">
           {t.hero.photoTag}
         </span>
       </motion.div>
@@ -141,7 +141,12 @@ function Strip({
   return (
     <motion.div
       className="absolute start-0 w-full overflow-hidden"
-      style={{ top: `${index * stripPct}%`, height: `${stripPct}%`, x: hover ? shift : 0 }}
+      style={{
+        top: `${index * stripPct}%`,
+        // +1px so rounding can never open a hairline seam between slices
+        height: `calc(${stripPct}% + 1px)`,
+        x: hover ? shift : 0,
+      }}
     >
       <img
         src={src}

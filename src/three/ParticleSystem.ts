@@ -312,6 +312,23 @@ export class ParticleSystem {
     this.renderer.render(this.scene, this.camera);
   }
 
+  /** DEV-only snapshot for verifying the instrument from the console. */
+  debugState() {
+    return {
+      intro: this.intro,
+      progress: this.progress,
+      spread: this.spread,
+      camZ: this.camZ,
+      breathe: this.pMat.uniforms.uBreathe.value,
+      opacity: this.pMat.uniforms.uOpacity.value,
+      groupX: this.group.position.x,
+      groupScale: this.group.scale.x,
+      count: this.count,
+      seg: this.seg,
+      mix: this.pMat.uniforms.uMix.value,
+    };
+  }
+
   dispose() {
     this.disposed = true;
     this.pGeo?.dispose();

@@ -27,6 +27,13 @@ export const dict = {
     preloader: {
       tag: "MOHAMMAD PARSA KARKOOTI",
       status: "INITIALIZING VISION SYSTEM",
+      steps: [
+        "loading typefaces",
+        "compiling shaders",
+        "generating point forms",
+        "wiring the lattice",
+        "assembling the swarm",
+      ],
     },
     hero: {
       kicker: "AI ENGINEER · COMPUTER VISION · FULL-STACK",
@@ -178,6 +185,13 @@ export const dict = {
     preloader: {
       tag: "محمد پارسا کرکوتی",
       status: "در حال راه‌اندازی سیستم بینایی",
+      steps: [
+        "بارگذاری قلم‌ها",
+        "کامپایل شیدرها",
+        "تولید فرم‌های نقطه‌ای",
+        "سیم‌کشی شبکه",
+        "هم‌گردایی ابر نقاط",
+      ],
     },
     hero: {
       kicker: "مهندس هوش مصنوعی · بینایی ماشین · فول‌استک",
