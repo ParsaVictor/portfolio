@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://parsa-karkooti.1-parsa-karkooti.workers.dev/sitemap.xml

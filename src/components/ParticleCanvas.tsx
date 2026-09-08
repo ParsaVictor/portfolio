@@ -1,0 +1,80 @@
+import { useEffect, useRef } from "react";
+import { STAGE_COLORS, STAGES } from "../config";
+import { scrollStore } from "../scroll/scrollStore";
+import type { ParticleSystem } from "../three/ParticleSystem";
+
+export default function ParticleCanvas({ active }: { active: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const activeRef = useRef(active);
+  activeRef.current = active;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    let raf = 0;
+    let last = performance.now();
+    let disposed = false;
+    let sys: ParticleSystem | null = null;
+    let cleanupEvents = () => {};
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const mobile = window.matchMedia("(max-width: 820px)").matches;
+    const colors = STAGES.map((s) => STAGE_COLORS[s]);
+
+    import("../three/ParticleSystem").then(({ ParticleSystem: PS }) => {
+      if (disposed) return;
+      const s = new PS({ canvas, colors, reducedMotion: reduced, mobile });
+      sys = s;
+      s.resize(window.innerWidth, window.innerHeight);
+
+      const onResize = () => s.resize(window.innerWidth, window.innerHeight);
+      const onPointer = (e: PointerEvent) =>
+        s.setPointer((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
+      const onLeave = () => s.setPointer(0, 0);
+      const onDown = () => s.pulse();
+
+      window.addEventListener("resize", onResize);
+      window.addEventListener("pointermove", onPointer, { passive: true });
+      window.addEventListener("pointerdown", onDown, { passive: true });
+      document.addEventListener("pointerleave", onLeave);
+      cleanupEvents = () => {
+        window.removeEventListener("resize", onResize);
+        window.removeEventListener("pointermove", onPointer);
+        window.removeEventListener("pointerdown", onDown);
+        document.removeEventListener("pointerleave", onLeave);
+      };
+
+      let started = false;
+      const loop = (now: number) => {
+        raf = requestAnimationFrame(loop);
+        const dt = now - last;
+        last = now;
+        if (document.hidden) return;
+        if (activeRef.current && !started) {
+          started = true;
+          s.playIntro();
+        }
+        s.setScrollProgress(scrollStore.progress);
+        s.update(dt);
+      };
+      raf = requestAnimationFrame(loop);
+    });
+
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(raf);
+      cleanupEvents();
+      sys?.dispose();
+      sys = null;
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      aria-hidden
+      className="pointer-events-none fixed inset-0 -z-0 h-full w-full"
+    />
+  );
+}
