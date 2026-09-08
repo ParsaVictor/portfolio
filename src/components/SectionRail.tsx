@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLang } from "../i18n/LangProvider";
 import { STAGE_COLORS } from "../config";
 import { onScroll } from "../scroll/scrollStore";
+import { clamp } from "../lib/num";
 import { scrollToId } from "../scroll/useSmoothScroll";
 
 const IDS = ["hero", "cv", "data", "web", "contact"] as const;
@@ -9,10 +10,15 @@ const IDS = ["hero", "cv", "data", "web", "contact"] as const;
 export default function SectionRail() {
   const { t } = useLang();
   const [active, setActive] = useState(0);
+  const spineRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const els = IDS.map((id) => document.getElementById(id));
-    return onScroll(() => {
+    return onScroll((s) => {
+      // a spine that fills as you descend — the page's own progress bar
+      if (spineRef.current) {
+        spineRef.current.style.transform = "scaleY(" + clamp(s.progress, 0, 1) + ")";
+      }
       const center = window.scrollY + window.innerHeight * 0.4;
       let cur = 0;
       els.forEach((el, i) => {
@@ -26,6 +32,13 @@ export default function SectionRail() {
 
   return (
     <nav className="fixed start-6 top-1/2 z-40 hidden -translate-y-1/2 flex-col items-center gap-5 lg:flex">
+      <div aria-hidden className="absolute inset-y-1 start-[5px] w-px overflow-hidden bg-bone/10">
+        <div
+          ref={spineRef}
+          className="h-full w-full origin-top bg-gradient-to-b from-cyanx via-violetx to-rose"
+          style={{ transform: "scaleY(0)" }}
+        />
+      </div>
       {IDS.map((id, i) => {
         const on = active === i;
         const color = STAGE_COLORS[id];
