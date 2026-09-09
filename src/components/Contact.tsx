@@ -44,8 +44,8 @@ export default function Contact() {
 
   return (
     <section id="contact" data-scene="4" className="relative overflow-hidden py-24 md:py-28 lg:py-32">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_50%,rgba(255,77,109,0.12),transparent)]" />
-      <div ref={stageRef} className="copy-plate relative mx-auto max-w-4xl px-6 text-center lg:px-10">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_65%_55%_at_50%_55%,rgba(255,106,94,0.035),transparent)]" />
+      <div ref={stageRef} className="relative mx-auto max-w-4xl px-6 text-center lg:px-10">
         <Reveal variant="fade" duration={700}>
           <div className="mb-5 flex items-center justify-center gap-3 font-mono text-[10px] tracking-[0.28em] text-rose sm:text-[11px] sm:tracking-[0.3em] ltr">
             <span className="h-px w-8 bg-rose" />

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Globe, Star, X } from "lucide-react";
 import { GithubIcon } from "./icons";
+import ProjectCover from "./ProjectCover";
 import { useLang } from "../i18n/LangProvider";
 import { desc } from "../data/projects";
 import { closeProject, useActiveProject } from "../state/projectModal";
@@ -10,8 +11,11 @@ import { digits } from "../lib/num";
 /**
  * The project detail overlay.
  *
- * Cards are still real links, so a middle-click or ⌘-click goes straight to
- * GitHub; a plain click opens this instead and keeps the visitor on the page.
+ * A floating panel, not a takeover: capped in both directions and centred, with
+ * the description in its own scroll area so long copy is always reachable while
+ * the actions stay pinned to the bottom. The scroller carries
+ * `data-lenis-prevent` — Lenis owns the wheel on this page, and without that
+ * attribute it swallows the event and the panel cannot be scrolled at all.
  */
 export default function ProjectModal() {
   const { t, lang } = useLang();
@@ -21,7 +25,6 @@ export default function ProjectModal() {
   const closeRef = useRef<HTMLButtonElement>(null);
   const restoreTo = useRef<HTMLElement | null>(null);
 
-  // drive the enter transition one frame after mount
   useEffect(() => {
     if (!project) {
       setOpen(false);
@@ -32,7 +35,6 @@ export default function ProjectModal() {
     return () => window.clearTimeout(id);
   }, [project]);
 
-  // freeze the page behind the overlay
   useEffect(() => {
     if (!project) return;
     setScrollLocked(true);
@@ -45,7 +47,6 @@ export default function ProjectModal() {
     };
   }, [project]);
 
-  // esc to close, and keep tab focus inside the panel
   useEffect(() => {
     if (!project) return;
     closeRef.current?.focus();
@@ -77,12 +78,11 @@ export default function ProjectModal() {
   }, [project]);
 
   if (!project) return null;
-
   const accent = project.accent;
 
   return (
     <div
-      className="fixed inset-0 z-[600] flex items-start justify-center overflow-y-auto overscroll-contain p-4 sm:items-center sm:p-6"
+      className="fixed inset-0 z-[600] grid place-items-center p-4 sm:p-6"
       role="dialog"
       aria-modal="true"
       aria-label={project.title}
@@ -91,19 +91,19 @@ export default function ProjectModal() {
         aria-label={t.project.close}
         onClick={closeProject}
         tabIndex={-1}
-        className="fixed inset-0 cursor-default bg-ink/80 backdrop-blur-md transition-opacity duration-300"
+        className="absolute inset-0 cursor-default bg-ink/85 backdrop-blur-md transition-opacity duration-300"
         style={{ opacity: open ? 1 : 0 }}
       />
 
       <div
         ref={panelRef}
-        className="relative my-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-bone/15 bg-ink-2/95 shadow-[0_40px_120px_-30px_rgba(0,0,0,0.95)]"
+        className="relative flex w-full max-w-[min(94vw,620px)] flex-col overflow-hidden rounded-2xl border border-bone/15 bg-ink-2/97 shadow-[0_40px_120px_-30px_rgba(0,0,0,0.95)]"
         style={{
+          maxHeight: "min(84vh, 760px)",
           opacity: open ? 1 : 0,
-          transform: open ? "translateY(0) scale(1)" : "translateY(26px) scale(0.97)",
-          clipPath: open ? "inset(0 0 0% 0 round 1rem)" : "inset(0 0 26% 0 round 1rem)",
+          transform: open ? "translateY(0) scale(1)" : "translateY(22px) scale(0.96)",
           transition:
-            "opacity 420ms ease, transform 620ms cubic-bezier(0.22,1,0.36,1), clip-path 620ms cubic-bezier(0.22,1,0.36,1)",
+            "opacity 360ms ease, transform 560ms cubic-bezier(0.22,1,0.36,1)",
         }}
       >
         <button
@@ -111,43 +111,57 @@ export default function ProjectModal() {
           onClick={closeProject}
           data-cursor-hover
           aria-label={t.project.close}
-          className="absolute end-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full border border-bone/15 bg-ink/70 text-bone/85 backdrop-blur transition-colors hover:border-bone/40 hover:text-bone"
+          className="absolute end-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-full border border-bone/15 bg-ink/80 text-bone/85 backdrop-blur transition-colors hover:border-bone/40 hover:text-bone"
         >
           <X size={16} />
         </button>
 
-        {project.image && (
-          <div className="relative aspect-[16/9] w-full overflow-hidden bg-black">
+        {/* ── header visual — capped so it can never crowd out the copy ── */}
+        <div
+          className="relative w-full shrink-0 overflow-hidden bg-black"
+          style={{ height: "clamp(130px, 24vh, 220px)" }}
+        >
+          {project.image ? (
             <img
               src={project.image}
               alt={project.title}
               className="h-full w-full object-cover"
               style={{
-                transform: open ? "scale(1)" : "scale(1.06)",
-                transition: "transform 900ms cubic-bezier(0.22,1,0.36,1)",
+                transform: open ? "scale(1)" : "scale(1.05)",
+                transition: "transform 800ms cubic-bezier(0.22,1,0.36,1)",
               }}
             />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-2 via-transparent to-transparent" />
-          </div>
-        )}
+          ) : (
+            <ProjectCover seed={project.id} accent={accent} variant="mesh" />
+          )}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-2 via-transparent to-transparent" />
+          <span
+            className="absolute bottom-3 start-4 rounded-md px-2 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
+            style={{ background: "rgba(8,7,6,0.72)", color: accent }}
+          >
+            {project.stat}
+          </span>
+        </div>
 
-        <div className="p-6 sm:p-8">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-[10px] tracking-[0.26em] ltr">
-            <span style={{ color: accent }}>{project.stat}</span>
-            <span className="text-dim">·</span>
-            <span className="flex items-center gap-1 text-dim">
-              <Star size={10} fill="currentColor" style={{ color: accent }} />
-              {digits(project.stars, lang)}
-            </span>
+        {/* ── scrollable body ─────────────────────────────────────────── */}
+        <div
+          data-lenis-prevent
+          className="mpk-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5 sm:px-7"
+        >
+          <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.26em] text-dim ltr">
+            <Star size={10} fill="currentColor" style={{ color: accent }} />
+            {digits(project.stars, lang)}
+            <span>·</span>
+            <span style={{ color: accent }}>{t[groupOf(project.id)]?.kicker ?? ""}</span>
           </div>
 
-          <h2 className="mt-3 text-2xl font-bold leading-tight text-bone sm:text-3xl ltr">
+          <h2 className="mt-2 text-xl font-bold leading-tight text-bone sm:text-2xl ltr">
             {project.title}
           </h2>
 
-          <p className="mt-4 text-[15px] leading-8 text-bone/85">{desc(project, lang)}</p>
+          <p className="mt-3 text-[15px] leading-7 text-bone/85">{desc(project, lang)}</p>
 
-          <div className="mt-6 flex flex-wrap gap-2">
+          <div className="mt-5 flex flex-wrap gap-2">
             {project.tags.map((tag) => (
               <span
                 key={tag}
@@ -157,45 +171,50 @@ export default function ProjectModal() {
               </span>
             ))}
           </div>
+        </div>
 
-          <div className="mt-8 flex flex-wrap gap-3 border-t border-bone/10 pt-6">
+        {/* ── actions stay put, whatever the copy does ────────────────── */}
+        <div className="flex shrink-0 flex-wrap gap-2.5 border-t border-bone/10 bg-ink-2/95 px-6 py-4 sm:px-7">
+          <a
+            href={project.url}
+            target="_blank"
+            rel="noreferrer"
+            data-cursor-hover
+            className="flex items-center gap-2 rounded-full bg-bone px-5 py-2.5 text-[13px] font-bold text-ink transition-transform hover:scale-[1.03]"
+          >
+            <GithubIcon size={14} />
+            {t.project.github}
+            <ArrowUpRight size={13} />
+          </a>
+
+          {project.website ? (
             <a
-              href={project.url}
+              href={project.website}
               target="_blank"
               rel="noreferrer"
               data-cursor-hover
-              className="flex items-center gap-2 rounded-full bg-bone px-5 py-3 text-[13px] font-bold text-ink transition-transform hover:scale-[1.03]"
+              className="flex items-center gap-2 rounded-full border px-5 py-2.5 text-[13px] font-semibold transition-all hover:-translate-y-0.5"
+              style={{ borderColor: accent + "80", color: accent }}
             >
-              <GithubIcon size={15} />
-              {t.project.github}
-              <ArrowUpRight size={14} />
+              <Globe size={14} />
+              {t.project.website}
+              <ArrowUpRight size={13} />
             </a>
-
-            {project.website ? (
-              <a
-                href={project.website}
-                target="_blank"
-                rel="noreferrer"
-                data-cursor-hover
-                className="flex items-center gap-2 rounded-full border px-5 py-3 text-[13px] font-semibold transition-all hover:-translate-y-0.5"
-                style={{ borderColor: accent + "80", color: accent }}
-              >
-                <Globe size={15} />
-                {t.project.website}
-                <ArrowUpRight size={14} />
-              </a>
-            ) : (
-              <span
-                className="flex items-center gap-2 rounded-full border border-bone/10 px-5 py-3 text-[13px] font-medium text-dim"
-                title={t.project.websiteSoon}
-              >
-                <Globe size={15} />
-                {t.project.websiteSoon}
-              </span>
-            )}
-          </div>
+          ) : (
+            <span className="flex items-center gap-2 rounded-full border border-bone/10 px-5 py-2.5 text-[13px] font-medium text-dim">
+              <Globe size={14} />
+              {t.project.websiteSoon}
+            </span>
+          )}
         </div>
       </div>
     </div>
   );
+}
+
+/** Which chapter a project belongs to, for the kicker line. */
+function groupOf(id: string): "cv" | "data" | "web" {
+  if (["pointcloud", "ai-template", "neuromesh"].includes(id)) return "data";
+  if (["b2b", "melkai"].includes(id)) return "web";
+  return "cv";
 }

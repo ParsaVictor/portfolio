@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Star } from "lucide-react";
 import Reveal from "./Reveal";
 import Scramble from "./Scramble";
@@ -50,6 +50,38 @@ export default function VisionRail() {
 
   const wrapRef = useScrub(onScrub);
   const stageRef = useHandover<HTMLDivElement>(1);
+  const railRef = useRef<HTMLDivElement>(null);
+
+  // Touch screens keep native scrolling — momentum and snapping are better than
+  // anything I would write — but the cards still ride the same arc, driven off
+  // the rail's own scroll position rather than the page's.
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const paint = () => {
+      const mid = rail.scrollLeft + rail.clientWidth / 2;
+      for (const child of Array.from(rail.children) as HTMLElement[]) {
+        const c = child.offsetLeft + child.offsetWidth / 2;
+        const d = (c - mid) / Math.max(1, child.offsetWidth);
+        const ad = Math.min(Math.abs(d), 2);
+        child.style.transform =
+          "rotateY(" + -d * 15 + "deg) translateZ(" + -ad * 80 + "px) scale(" + (1 - ad * 0.05) + ")";
+        child.style.opacity = String(Math.max(0.25, 1 - ad * 0.42));
+      }
+    };
+
+    paint();
+    rail.addEventListener("scroll", paint, { passive: true });
+    window.addEventListener("resize", paint);
+    const settle = window.setTimeout(paint, 600);
+    return () => {
+      rail.removeEventListener("scroll", paint);
+      window.removeEventListener("resize", paint);
+      window.clearTimeout(settle);
+    };
+  }, []);
   const current = cvProjects[clamp(active, 0, N - 1)];
 
   return (
@@ -60,15 +92,23 @@ export default function VisionRail() {
           <StageCopy accent={ACCENT} meta={t.cv} />
         </div>
         <div
+          ref={railRef}
           dir="ltr"
-          className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-16 [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-[9vw] pb-14 [-ms-overflow-style:none] [perspective:1100px] [scrollbar-width:none]"
         >
           {cvProjects.map((p, i) => (
-            <div key={p.id} className="w-[82vw] shrink-0 snap-center sm:w-[60vw]">
+            <div
+              key={p.id}
+              className="w-[82vw] shrink-0 snap-center will-change-transform sm:w-[58vw]"
+              style={{ transition: "opacity 220ms linear" }}
+            >
               <VisionCard project={p} index={i} lang={lang} view={t.project.open} />
             </div>
           ))}
         </div>
+        <p className="px-6 pb-14 font-mono text-[10px] uppercase tracking-[0.26em] text-dim">
+          {t.cv.railHint}
+        </p>
       </div>
 
       {/* ── desktop: sticky stage — cloud left, content right ───────── */}
@@ -123,7 +163,7 @@ export default function VisionRail() {
               {/* the arc gets the whole column width */}
               <div
                 dir="ltr"
-                className="relative mt-6 h-[54vh] [perspective:1700px]"
+                className="relative mt-6 h-[58vh] [perspective:1700px]"
               >
                 {cvProjects.map((p, i) => (
                   <div
@@ -131,7 +171,7 @@ export default function VisionRail() {
                     ref={(el) => {
                       cardRefs.current[i] = el;
                     }}
-                    className="absolute inset-y-0 left-1/2 w-[min(27vw,430px)] -translate-x-1/2 will-change-transform"
+                    className="absolute left-1/2 top-1/2 w-[min(30vw,440px)] -translate-x-1/2 -translate-y-1/2 will-change-transform"
                     style={{ transition: "opacity 200ms linear" }}
                   >
                     <VisionCard project={p} index={i} lang={lang} view={t.project.open} focus />
@@ -221,7 +261,7 @@ function VisionCard({
         e.preventDefault();
         openProject(project);
       }}
-      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-bone/12 bg-ink/85 backdrop-blur-md transition-colors duration-300 hover:border-bone/30"
+      className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-bone/12 bg-ink/85 backdrop-blur-md transition-colors duration-300 hover:border-bone/30"
       style={{ boxShadow: focus ? "0 30px 90px -40px " + project.accent : undefined }}
     >
       {/* the read-out — the image stays at full brightness, only the HUD sits over it */}
@@ -256,10 +296,12 @@ function VisionCard({
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col p-5 sm:p-6">
+      <div className="flex flex-col p-5">
         <h3 className="text-lg font-bold text-bone sm:text-xl ltr">{project.title}</h3>
-        <p className="mt-3 flex-1 text-[14.5px] leading-7 text-bone/85">{desc(project, lang)}</p>
-        <div className="mt-4 flex flex-wrap gap-1.5">
+        <p className="mt-2.5 line-clamp-3 text-[14px] leading-6 text-bone/85">
+          {desc(project, lang)}
+        </p>
+        <div className="mt-3.5 flex flex-wrap gap-1.5">
           {project.tags.map((tag) => (
             <span
               key={tag}
@@ -270,7 +312,7 @@ function VisionCard({
           ))}
         </div>
         <div
-          className="mt-5 flex items-center gap-1.5 text-xs font-semibold"
+          className="mt-4 flex items-center gap-1.5 text-xs font-semibold"
           style={{ color: project.accent }}
         >
           <span>{view}</span>

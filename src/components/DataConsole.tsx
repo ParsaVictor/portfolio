@@ -285,7 +285,7 @@ function Telemetry({ label }: { label: string }) {
             <span
               key={i}
               className="text-[10px] text-bone/45 transition-colors duration-300"
-              style={v.startsWith("-") ? undefined : { color: "rgba(157,140,255,0.85)" }}
+              style={v.startsWith("-") ? undefined : { color: "rgba(168,148,255,0.85)" }}
             >
               {v}
             </span>

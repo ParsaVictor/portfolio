@@ -96,8 +96,18 @@ export default function AboutStage() {
             </h3>
           </Reveal>
 
-          <div className="mt-8">
-            <Timeline items={t.about.method} accent={ACCENT} lang={lang} />
+          <div className="relative mt-8 overflow-hidden rounded-3xl border border-bone/[0.07] bg-bone/[0.018] px-4 py-8 sm:px-8">
+            <div className="grid-bg pointer-events-none absolute inset-0 opacity-40" />
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(70% 55% at 50% 40%, rgba(168,148,255,0.055), transparent 75%)",
+              }}
+            />
+            <div className="relative">
+              <Timeline items={t.about.method} accent={ACCENT} lang={lang} />
+            </div>
           </div>
         </div>
       </div>

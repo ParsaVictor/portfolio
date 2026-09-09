@@ -80,6 +80,23 @@ body {
 }
 
 @layer utilities {
+  /* The overlay scrolls internally, so it needs a scrollbar people can see. */
+  .mpk-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(242, 236, 225, 0.22) transparent;
+  }
+  .mpk-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .mpk-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .mpk-scroll::-webkit-scrollbar-thumb {
+    background: rgba(242, 236, 225, 0.22);
+    border-radius: 999px;
+    border: none;
+  }
+
   /* A pool of dark under a block of copy, so text never has to compete with
      the particle field behind it. Symmetric, so it reads the same in RTL. */
   .copy-plate {
