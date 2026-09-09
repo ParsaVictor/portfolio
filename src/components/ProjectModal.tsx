@@ -119,13 +119,13 @@ export default function ProjectModal() {
         {/* ── header visual — capped so it can never crowd out the copy ── */}
         <div
           className="relative w-full shrink-0 overflow-hidden bg-black"
-          style={{ height: "clamp(130px, 24vh, 220px)" }}
+          style={{ height: "clamp(170px, 32vh, 300px)" }}
         >
           {project.image ? (
             <img
               src={project.image}
               alt={project.title}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
               style={{
                 transform: open ? "scale(1)" : "scale(1.05)",
                 transition: "transform 800ms cubic-bezier(0.22,1,0.36,1)",

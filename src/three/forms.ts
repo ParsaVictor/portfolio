@@ -282,44 +282,72 @@ function globeLines(n: number, seed: number): Float32Array {
   return fitSegments(segs, n, seed);
 }
 
-/* ---------------------------------------------------------------- 4 · RING */
+/* ------------------------------------------------------------------- 4 · @ */
 
-function ringForm(base: [number, number, number][], seed: number): Float32Array {
+/**
+ * The contact glyph, drawn parametrically rather than sampled from a font —
+ * the shape then reads identically on every machine, and each stroke keeps its
+ * own arc-length so the points spread evenly instead of bunching at the joins.
+ */
+function atCurves(): number[][][] {
+  const R = 0.92;
+  const start = (-22 * Math.PI) / 180;
+  const sweep = (302 * Math.PI) / 180;
+
+  const outer: number[][] = [];
+  for (let k = 0; k <= 260; k++) {
+    const t = k / 260;
+    const a = start + t * sweep;
+    outer.push([Math.cos(a) * R, Math.sin(a) * R, Math.sin(t * 7) * 0.035]);
+  }
+
+  // the stroke that runs off the open end of the ring
+  const tail: number[][] = [];
+  for (let k = 0; k <= 48; k++) {
+    const t = k / 48;
+    const a = start - t * 0.62;
+    const rad = R * (1 + t * 0.3);
+    tail.push([Math.cos(a) * rad, Math.sin(a) * rad - t * 0.14, 0]);
+  }
+
+  // the bowl of the inner 'a'
+  const bowl: number[][] = [];
+  const br = 0.32;
+  const bx = -0.06;
+  for (let k = 0; k <= 150; k++) {
+    const a = (k / 150) * TAU;
+    bowl.push([bx + Math.cos(a) * br, Math.sin(a) * br, 0]);
+  }
+
+  // its stem, dropping down the right side and kicking out at the foot
+  const stem: number[][] = [];
+  for (let k = 0; k <= 70; k++) {
+    const t = k / 70;
+    stem.push([0.26 + (t > 0.76 ? (t - 0.76) * 0.85 : 0), 0.34 - t * 0.62, 0]);
+  }
+
+  return [outer, tail, bowl, stem];
+}
+
+function atForm(base: [number, number, number][], seed: number): Float32Array {
   const rand = mulberry32(seed);
+  const curves = atCurves();
+  const flat: number[][] = [];
+  for (const c of curves) flat.push(...c);
   const n = base.length;
-  const R = 0.82;
   const out = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
-    const a = (i / n) * TAU * 3 + rand() * 0.1;
-    const tube = 0.115 * Math.sqrt(rand());
-    const ta = rand() * TAU;
-    out[i * 3] = Math.cos(a) * (R + Math.cos(ta) * tube);
-    out[i * 3 + 1] = Math.sin(a) * (R + Math.cos(ta) * tube);
-    out[i * 3 + 2] = Math.sin(ta) * tube;
+    const p = flat[Math.floor(rand() * flat.length) % flat.length];
+    out[i * 3] = p[0] + (rand() - 0.5) * 0.05;
+    out[i * 3 + 1] = p[1] + (rand() - 0.5) * 0.05;
+    out[i * 3 + 2] = (p[2] ?? 0) + (rand() - 0.5) * 0.13;
   }
   return out;
 }
 
-function ringLines(n: number, seed: number): Float32Array {
-  const R = 0.82;
-  const poly: number[][] = [];
-  for (let k = 0; k <= 160; k++) {
-    const a = (k / 160) * TAU;
-    poly.push([Math.cos(a) * R, Math.sin(a) * R, 0]);
-  }
-  const segs = polylineToSegs(poly);
-  // a few inward strands
-  for (let s = 0; s < 8; s++) {
-    const a0 = (s / 8) * TAU;
-    const strand: number[][] = [];
-    for (let k = 0; k <= 24; k++) {
-      const t = k / 24;
-      const a = a0 + t * 2.2;
-      const rad = R * (1 - t * 0.9);
-      strand.push([Math.cos(a) * rad, Math.sin(a) * rad, (Math.random() - 0.5) * 0.1]);
-    }
-    segs.push(...polylineToSegs(strand));
-  }
+function atLines(n: number, seed: number): Float32Array {
+  const segs: [number[], number[]][] = [];
+  for (const c of atCurves()) segs.push(...polylineToSegs(c));
   return fitSegments(segs, n, seed);
 }
 
@@ -346,14 +374,14 @@ export function buildForms(pointCount: number, lineSeg: number): FormSet {
       eyeForm(base, 12),
       networkForm(pointCount, 23),
       globeForm(base, 31),
-      ringForm(base, 41),
+      atForm(base, 41),
     ],
     lines: [
       sphereLines(lineSeg, 112),
       eyeLines(lineSeg, 123),
       networkLines(lineSeg, 223),
       globeLines(lineSeg, 331),
-      ringLines(lineSeg, 441),
+      atLines(lineSeg, 441),
     ],
   };
 }

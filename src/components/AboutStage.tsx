@@ -1,27 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Reveal from "./Reveal";
 import Scramble from "./Scramble";
 import Timeline from "./Timeline";
+import SkillGraph from "./SkillGraph";
 import { useLang } from "../i18n/LangProvider";
 import { identity } from "../config";
-import { clamp, digits } from "../lib/num";
+import { digits } from "../lib/num";
 import { useHandover } from "../scroll/useHandover";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const ACCENT = "#a894ff";
-
-/** Relative emphasis across the stack, not a self-assessment score. */
-const CAPABILITIES: { label: string; level: number }[] = [
-  { label: "Python · PyTorch", level: 0.95 },
-  { label: "Computer vision · YOLO", level: 0.93 },
-  { label: "OpenCV · classical CV", level: 0.88 },
-  { label: "Data / geometry", level: 0.8 },
-  { label: "TypeScript · React", level: 0.78 },
-  { label: "Infra · Docker · CI", level: 0.65 },
-];
 
 export default function AboutStage() {
   const { t, lang } = useLang();
@@ -56,13 +47,23 @@ export default function AboutStage() {
               <p className="mt-4 text-[16px] leading-8 text-bone/85 sm:text-base">{t.about.p2}</p>
             </Reveal>
 
-            <Reveal variant="up" duration={850} delay={320}>
-              <Capabilities label={t.about.skillsLabel} lang={lang} />
-            </Reveal>
           </div>
 
           <Reveal variant="up" duration={950} delay={200} className="lg:self-start">
             <Dossier lang={lang} labels={t.about.dossier} />
+          </Reveal>
+        </div>
+
+        {/* ── the stack, as a graph ────────────────────────────────────── */}
+        <div className="mt-16 md:mt-20">
+          <Reveal variant="fade" duration={700}>
+            <p className="mb-4 flex items-center gap-3 font-mono text-[10px] tracking-[0.3em] text-cyanx ltr">
+              <span className="h-px w-8 bg-cyanx" />
+              <Scramble text={t.about.skillsLabel} />
+            </p>
+          </Reveal>
+          <Reveal variant="up" duration={900} delay={100}>
+            <SkillGraph hub="MPK" />
           </Reveal>
         </div>
 
@@ -112,66 +113,6 @@ export default function AboutStage() {
         </div>
       </div>
     </section>
-  );
-}
-
-/* ---------------------------------------------------------- capabilities */
-
-function Capabilities({ label, lang }: { label: string; lang: "en" | "fa" }) {
-  const wrapRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    const bars = Array.from(el.querySelectorAll<HTMLElement>("[data-bar]"));
-    const paint = (p: number) => {
-      bars.forEach((b, i) => {
-        const level = Number(b.dataset.level || 0);
-        // staggered: each bar starts a little after the previous
-        const local = clamp((p - i * 0.06) / 0.5, 0, 1);
-        b.style.transform = "scaleX(" + level * local + ")";
-      });
-    };
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      paint(1);
-      return;
-    }
-    const st = ScrollTrigger.create({
-      trigger: el,
-      start: "top 88%",
-      end: "bottom 55%",
-      onUpdate: (self) => paint(self.progress),
-      onRefresh: (self) => paint(self.progress),
-    });
-    paint(0);
-    return () => st.kill();
-  }, []);
-
-  return (
-    <div ref={wrapRef} className="mt-8">
-      <div className="mb-4 font-mono text-[10px] tracking-[0.3em] text-dim ltr">{label}</div>
-      <div className="space-y-2.5">
-        {CAPABILITIES.map((c) => (
-          <div key={c.label} className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1">
-            <span className="font-mono text-[11px] tracking-wider text-bone/85 ltr">{c.label}</span>
-            <span className="font-mono text-[10px] tabular-nums text-dim ltr">
-              {digits(Math.round(c.level * 100), lang)}
-            </span>
-            <div className="col-span-2 h-[3px] overflow-hidden rounded-full bg-bone/8">
-              <div
-                data-bar
-                data-level={c.level}
-                className="h-full origin-left rounded-full"
-                style={{
-                  background: "linear-gradient(90deg, #35e0ff, " + ACCENT + ")",
-                  transform: "scaleX(0)",
-                }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 

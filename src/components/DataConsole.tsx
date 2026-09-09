@@ -19,9 +19,10 @@ const ACCENT = STAGE_COLORS.data;
 /**
  * Neural networks & data.
  *
- * Copy and projects run down one side as a scroll-focused list; a live
- * telemetry panel floats on the other, layered over the particle lattice so
- * the swarm reads as the thing being measured.
+ * Laid out in bands rather than columns. The lattice holds the upper right of
+ * the frame for this chapter, so nothing is pinned there: the copy keeps to the
+ * left, and the telemetry strip and the project list travel up through the
+ * viewport underneath it instead of parking on top of it.
  */
 export default function DataConsole() {
   const { t, lang } = useLang();
@@ -30,22 +31,23 @@ export default function DataConsole() {
   return (
     <section id="data" data-scene="2" className="relative py-20 md:py-24 lg:py-28">
       <div ref={stageRef} className="mx-auto max-w-7xl px-6 lg:px-10">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] lg:gap-14">
-          {/* ── left: copy + scroll-focused project rows ─────────────── */}
-          <div>
-            <StageCopy accent={ACCENT} meta={t.data} />
+        {/* ── band 1 · copy. The lattice owns the space to its right. ── */}
+        <div className="lg:max-w-[54%]">
+          <StageCopy accent={ACCENT} meta={t.data} />
+        </div>
 
-            <div className="mt-12 border-t border-bone/10">
-              {dataProjects.map((p, i) => (
-                <FocusRow key={p.id} project={p} index={i} lang={lang} open={t.project.open} />
-              ))}
-            </div>
-          </div>
-
-          {/* ── right: telemetry over the lattice ────────────────────── */}
-          <Reveal variant="up" duration={900} delay={120} className="lg:sticky lg:top-28 lg:self-start">
+        {/* ── band 2 · the instruments, as a strip that scrolls past ─── */}
+        <Reveal variant="up" duration={900} delay={120}>
+          <div className="mt-14">
             <Telemetry label={t.data.console} />
-          </Reveal>
+          </div>
+        </Reveal>
+
+        {/* ── band 3 · the work ───────────────────────────────────────── */}
+        <div className="mt-14 border-t border-bone/10">
+          {dataProjects.map((p, i) => (
+            <FocusRow key={p.id} project={p} index={i} lang={lang} open={t.project.open} />
+          ))}
         </div>
       </div>
     </section>
@@ -232,7 +234,7 @@ function Telemetry({ label }: { label: string }) {
     <div
       ref={boxRef}
       dir="ltr"
-      className="rounded-2xl border border-bone/12 bg-ink/70 p-5 font-mono text-[11px] backdrop-blur-md"
+      className="rounded-2xl border border-bone/12 bg-ink/75 p-5 font-mono text-[11px] backdrop-blur-md sm:p-6"
     >
       <div className="flex items-center justify-between border-b border-bone/10 pb-3">
         <span className="tracking-[0.24em] text-bone/85">{label}</span>
@@ -245,8 +247,9 @@ function Telemetry({ label }: { label: string }) {
         </span>
       </div>
 
+      <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)] lg:gap-8">
       {/* loss curve */}
-      <div className="mt-4">
+      <div>
         <div className="mb-2 flex justify-between text-[10px] text-dim">
           <span>train_loss</span>
           <span className="tabular-nums">epoch {String(epoch).padStart(3, "0")}</span>
@@ -275,7 +278,7 @@ function Telemetry({ label }: { label: string }) {
       </div>
 
       {/* tensor matrix */}
-      <div className="mt-4">
+      <div>
         <div className="mb-2 text-[10px] text-dim">tensor[5, 6] · float32</div>
         <div
           className="grid gap-x-2 gap-y-1 tabular-nums"
@@ -294,7 +297,7 @@ function Telemetry({ label }: { label: string }) {
       </div>
 
       {/* readouts */}
-      <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-bone/10 pt-4 text-[10px]">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 self-start border-t border-bone/10 pt-4 text-[10px] lg:grid-cols-1 lg:border-t-0 lg:pt-0">
         {[
           ["params", "11.2M"],
           ["throughput", "60 fps"],
@@ -307,6 +310,7 @@ function Telemetry({ label }: { label: string }) {
           </div>
         ))}
       </dl>
+      </div>
     </div>
   );
 }

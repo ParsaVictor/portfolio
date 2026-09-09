@@ -7,12 +7,12 @@ const STAGE_COUNT = 5; // hero · vision · neural · web · contact
 
 /** Presence of the instrument per stage — loud at the poles, composed behind content. */
 const STAGE_OPACITY = [0.8, 0.72, 0.78, 0.72, 0.92];
-const STAGE_LINE_OPACITY = [0.34, 0.3, 0.46, 0.34, 0.4];
+const STAGE_LINE_OPACITY = [0.34, 0.3, 0.46, 0.34, 0.55];
 /** Hero fills the frame; the working sections keep the form compact. */
-const STAGE_BREATHE = [1.32, 0.78, 0.82, 0.78, 1.12];
+const STAGE_BREATHE = [1.32, 0.78, 0.82, 0.78, 1.24];
 /** Which side of the viewport the instrument owns, so copy always gets the other. */
 const STAGE_OFFSET_X = [0.1, -1.5, 1.5, -1.5, 0];
-const STAGE_OFFSET_Y = [0, 0.02, 0.02, 0.02, 0];
+const STAGE_OFFSET_Y = [0, 0.02, 0.16, 0.02, 0];
 
 type Opts = {
   canvas: HTMLCanvasElement;

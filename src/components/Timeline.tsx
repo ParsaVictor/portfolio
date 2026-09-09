@@ -56,7 +56,7 @@ export default function Timeline({
     };
   }, []);
 
-  const rowH = narrow ? 148 : 186;
+  const rowH = narrow ? 176 : 208;
   const height = items.length * rowH;
   const leftX = narrow ? 22 : w * 0.5 - w * 0.24;
   const rightX = narrow ? 22 : w * 0.5 + w * 0.24;
@@ -174,26 +174,36 @@ export default function Timeline({
             }}
             className="absolute"
             style={{
-              top: nodeY(i) - rowH * 0.36 + "px",
+              top: nodeY(i) - rowH * 0.4 + "px",
               left: narrow ? "46px" : onRight ? "50%" : undefined,
               right: narrow ? "0" : onRight ? undefined : "50%",
               width: narrow ? "auto" : "42%",
-              paddingInlineStart: narrow ? 0 : onRight ? "3.5rem" : 0,
-              paddingInlineEnd: narrow ? 0 : onRight ? 0 : "3.5rem",
+              paddingInlineStart: narrow ? 0 : onRight ? "3rem" : 0,
+              paddingInlineEnd: narrow ? 0 : onRight ? 0 : "3rem",
               ["--lit" as string]: "0",
-              opacity: "calc(0.4 + var(--lit) * 0.6)",
+              opacity: "calc(0.45 + var(--lit) * 0.55)",
               transform: "translateY(calc((1 - var(--lit)) * 10px))",
               transition: "opacity 480ms ease, transform 480ms ease",
-              textAlign: onRight ? "start" : narrow ? "start" : "end",
             }}
           >
-            <div className="font-mono text-[10px] tracking-[0.34em] text-dim ltr">
-              {digits(m.step, lang)}
+            {/* each step is its own card, so the copy always has a ground of
+                its own rather than floating on whatever is behind the page */}
+            <div
+              className="rounded-2xl border p-4 backdrop-blur-sm transition-colors duration-500 sm:p-5"
+              style={{
+                borderColor: "color-mix(in oklab, " + accent + " calc(var(--lit) * 38%), rgba(242,236,225,0.09))",
+                background: "rgba(10,9,8,0.55)",
+                boxShadow: "0 0 0 0 transparent",
+              }}
+            >
+              <div className="font-mono text-[10px] tracking-[0.34em] text-dim ltr">
+                {digits(m.step, lang)}
+              </div>
+              <h3 className="mt-2 text-lg font-bold leading-tight text-bone sm:text-xl">
+                {m.title}
+              </h3>
+              <p className="mt-2 text-[14px] leading-7 text-bone/85 sm:text-[14.5px]">{m.body}</p>
             </div>
-            <h3 className="mt-2 text-lg font-bold leading-tight text-bone sm:text-xl">
-              {m.title}
-            </h3>
-            <p className="mt-2 text-[14px] leading-7 text-bone/85 sm:text-[14.5px]">{m.body}</p>
           </div>
         );
       })}

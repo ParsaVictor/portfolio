@@ -48,13 +48,9 @@ export default function Hero() {
       data-scene="0"
       className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden pb-16 pt-28 md:pt-32"
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 start-0 w-full bg-[radial-gradient(68%_62%_at_26%_50%,rgba(10,9,8,0.9),rgba(10,9,8,0.45)_58%,transparent_80%)] lg:w-[58%]"
-      />
       <div className="relative mx-auto grid w-full max-w-7xl flex-1 grid-cols-1 items-center gap-y-10 px-6 md:gap-x-10 lg:grid-cols-[1.08fr_0.92fr] lg:grid-rows-[auto_auto] lg:px-10">
         {/* ── A · identity ─────────────────────────────── */}
-        <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
+        <div className="copy-plate lg:col-start-1 lg:row-start-1 lg:self-end">
           <Reveal variant="fade" duration={700} delay={60}>
             <p className="mb-5 flex items-center gap-3 font-mono text-[10px] tracking-[0.24em] text-cyanx sm:text-[11px] sm:tracking-[0.28em] ltr">
               <span className="h-px w-6 bg-cyanx sm:w-8" />
@@ -92,7 +88,7 @@ export default function Hero() {
         </Reveal>
 
         {/* ── C · pitch + actions ──────────────────────── */}
-        <div className="lg:col-start-1 lg:row-start-2 lg:self-start">
+        <div className="copy-plate lg:col-start-1 lg:row-start-2 lg:self-start">
           <Reveal variant="up" duration={800} delay={480}>
             <p className="max-w-xl text-balance text-[16px] leading-8 text-bone/85 sm:text-base">
               {t.hero.lead}{" "}
