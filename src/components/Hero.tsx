@@ -21,7 +21,7 @@ function RoleRotator({ roles }: { roles: readonly string[] }) {
       {roles.map((r, k) => (
         <span
           key={r}
-          className="absolute inset-x-0 top-0 whitespace-nowrap text-cyanx transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          className="absolute inset-x-0 top-0 flex h-8 items-center whitespace-nowrap leading-8 text-cyanx transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
           style={{
             opacity: k === i ? 1 : 0,
             transform: k === i ? "translateY(0)" : k < i ? "translateY(-100%)" : "translateY(100%)",
@@ -48,7 +48,11 @@ export default function Hero() {
       data-scene="0"
       className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden pb-16 pt-28 md:pt-32"
     >
-      <div className="mx-auto grid w-full max-w-7xl flex-1 grid-cols-1 items-center gap-y-10 px-6 md:gap-x-10 lg:grid-cols-[1.08fr_0.92fr] lg:grid-rows-[auto_auto] lg:px-10">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 start-0 w-full bg-[radial-gradient(68%_62%_at_26%_50%,rgba(10,9,8,0.9),rgba(10,9,8,0.45)_58%,transparent_80%)] lg:w-[58%]"
+      />
+      <div className="relative mx-auto grid w-full max-w-7xl flex-1 grid-cols-1 items-center gap-y-10 px-6 md:gap-x-10 lg:grid-cols-[1.08fr_0.92fr] lg:grid-rows-[auto_auto] lg:px-10">
         {/* ── A · identity ─────────────────────────────── */}
         <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
           <Reveal variant="fade" duration={700} delay={60}>
@@ -90,7 +94,7 @@ export default function Hero() {
         {/* ── C · pitch + actions ──────────────────────── */}
         <div className="lg:col-start-1 lg:row-start-2 lg:self-start">
           <Reveal variant="up" duration={800} delay={480}>
-            <p className="max-w-xl text-balance text-[16px] leading-8 text-bone/74 sm:text-base">
+            <p className="max-w-xl text-balance text-[16px] leading-8 text-bone/85 sm:text-base">
               {t.hero.lead}{" "}
               {t.hero.leadWords.map((w, i) => (
                 <span key={w}>

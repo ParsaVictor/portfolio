@@ -7,6 +7,7 @@ import { useLang } from "../i18n/LangProvider";
 import { cvProjects, desc, type Project } from "../data/projects";
 import { STAGE_COLORS } from "../config";
 import { useScrub } from "../scroll/useScrub";
+import { useHandover } from "../scroll/useHandover";
 import { clamp } from "../lib/num";
 import { openProject, shouldOpenInPage } from "../state/projectModal";
 import { digits } from "../lib/num";
@@ -48,6 +49,7 @@ export default function VisionRail() {
   }, []);
 
   const wrapRef = useScrub(onScrub);
+  const stageRef = useHandover<HTMLDivElement>(1);
   const current = cvProjects[clamp(active, 0, N - 1)];
 
   return (
@@ -76,7 +78,10 @@ export default function VisionRail() {
         style={{ height: N * 62 + 90 + "vh" }}
       >
         <div className="sticky top-0 flex h-screen items-center overflow-hidden">
-          <div className="mx-auto grid w-full max-w-[1600px] grid-cols-[minmax(0,31%)_minmax(0,69%)] items-center gap-8 px-10">
+          <div
+            ref={stageRef}
+            className="mx-auto grid w-full max-w-[1600px] grid-cols-[minmax(0,31%)_minmax(0,69%)] items-center gap-8 px-10"
+          >
             {/* the swarm owns this column — only a plate marks it */}
             <SideLabel
               index={t.cv.index}
@@ -88,7 +93,7 @@ export default function VisionRail() {
             <div className="flex h-[82vh] flex-col justify-center">
               {/* header + live read-out share one compact band */}
               <div className="flex items-end justify-between gap-8 border-b border-bone/10 pb-6">
-                <div className="min-w-0">
+                <div className="copy-plate min-w-0">
                   <StageCopy accent={ACCENT} meta={t.cv} />
                 </div>
 
@@ -118,7 +123,7 @@ export default function VisionRail() {
               {/* the arc gets the whole column width */}
               <div
                 dir="ltr"
-                className="relative mt-6 h-[54vh] [perspective:1700px] [transform-style:preserve-3d]"
+                className="relative mt-6 h-[54vh] [perspective:1700px]"
               >
                 {cvProjects.map((p, i) => (
                   <div
@@ -127,7 +132,7 @@ export default function VisionRail() {
                       cardRefs.current[i] = el;
                     }}
                     className="absolute inset-y-0 left-1/2 w-[min(27vw,430px)] -translate-x-1/2 will-change-transform"
-                    style={{ transformStyle: "preserve-3d", transition: "opacity 200ms linear" }}
+                    style={{ transition: "opacity 200ms linear" }}
                   >
                     <VisionCard project={p} index={i} lang={lang} view={t.project.open} focus />
                   </div>
@@ -182,7 +187,7 @@ export function StageCopy({
       <Reveal variant="up" duration={850} delay={180}>
         <p
           className={
-            "mt-5 text-[16px] leading-8 text-bone/72 " + (centered ? "mx-auto max-w-2xl" : "max-w-md")
+            "mt-5 text-[16px] leading-8 text-bone/85 " + (centered ? "mx-auto max-w-2xl" : "max-w-md")
           }
         >
           {meta.desc}
@@ -241,11 +246,11 @@ function VisionCard({
 
         <span
           className="absolute bottom-3 left-3 rounded-md px-2 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
-          style={{ background: "rgba(3,5,9,0.72)", color: project.accent }}
+          style={{ background: "rgba(8,7,6,0.72)", color: project.accent }}
         >
           {project.stat}
         </span>
-        <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-md bg-[rgba(3,5,9,0.72)] px-2 py-1 font-mono text-[10px] tracking-widest text-bone/80 backdrop-blur-sm ltr">
+        <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-md bg-[rgba(8,7,6,0.72)] px-2 py-1 font-mono text-[10px] tracking-widest text-bone/80 backdrop-blur-sm ltr">
           <Star size={9} fill="currentColor" style={{ color: project.accent }} />
           {digits(project.stars, lang)}
         </span>
@@ -253,12 +258,12 @@ function VisionCard({
 
       <div className="flex flex-1 flex-col p-5 sm:p-6">
         <h3 className="text-lg font-bold text-bone sm:text-xl ltr">{project.title}</h3>
-        <p className="mt-3 flex-1 text-[14.5px] leading-7 text-bone/74">{desc(project, lang)}</p>
+        <p className="mt-3 flex-1 text-[14.5px] leading-7 text-bone/85">{desc(project, lang)}</p>
         <div className="mt-4 flex flex-wrap gap-1.5">
           {project.tags.map((tag) => (
             <span
               key={tag}
-              className="rounded-full border border-bone/10 px-2.5 py-1 font-mono text-[10px] text-bone/72 ltr"
+              className="rounded-full border border-bone/10 px-2.5 py-1 font-mono text-[10px] text-bone/85 ltr"
             >
               {tag}
             </span>

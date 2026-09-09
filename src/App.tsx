@@ -29,13 +29,15 @@ export default function App() {
       <Preloader onDone={() => setLoading(false)} />
 
       <div className="grid-bg pointer-events-none fixed inset-0 -z-10" />
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_70%_50%_at_50%_-10%,rgba(53,224,255,0.10),transparent)]" />
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(5,6,10,0.9)_100%)]" />
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_70%_50%_at_50%_-10%,rgba(53,224,255,0.09),transparent)]" />
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_60%_55%_at_12%_88%,rgba(255,180,84,0.10),transparent)]" />
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_50%_45%_at_92%_20%,rgba(255,106,94,0.06),transparent)]" />
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(10,9,8,0.9)_100%)]" />
 
       <ParticleCanvas active={!loading} />
       {/* Scrim ABOVE the canvas: the vignette below it cannot dampen additive
           points, and without this the cloud competes with copy at the edges. */}
-      <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(ellipse_62%_58%_at_50%_50%,transparent_35%,rgba(5,6,10,0.72)_100%)]" />
+      <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(ellipse_62%_58%_at_50%_50%,transparent_35%,rgba(10,9,8,0.72)_100%)]" />
       <CustomCursor />
 
       {!loading && (

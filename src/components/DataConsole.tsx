@@ -8,6 +8,7 @@ import { useLang } from "../i18n/LangProvider";
 import { dataProjects, desc, type Project } from "../data/projects";
 import { STAGE_COLORS } from "../config";
 import { clamp, digits } from "../lib/num";
+import { useHandover } from "../scroll/useHandover";
 import { openProject, shouldOpenInPage } from "../state/projectModal";
 import ProjectCover from "./ProjectCover";
 
@@ -24,10 +25,11 @@ const ACCENT = STAGE_COLORS.data;
  */
 export default function DataConsole() {
   const { t, lang } = useLang();
+  const stageRef = useHandover<HTMLDivElement>(2);
 
   return (
     <section id="data" data-scene="2" className="relative py-20 md:py-24 lg:py-28">
-      <div className="mx-auto max-w-7xl px-6 lg:px-10">
+      <div ref={stageRef} className="mx-auto max-w-7xl px-6 lg:px-10">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] lg:gap-14">
           {/* ── left: copy + scroll-focused project rows ─────────────── */}
           <div>
@@ -135,7 +137,7 @@ function FocusRow({
         )}
         <span
           className="absolute bottom-2 start-2 rounded-md px-2 py-0.5 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
-          style={{ background: "rgba(3,5,9,0.7)", color: project.accent }}
+          style={{ background: "rgba(8,7,6,0.7)", color: project.accent }}
         >
           {project.stat}
         </span>
@@ -153,7 +155,7 @@ function FocusRow({
             {project.title}
           </h3>
         </div>
-        <p className="mt-2.5 max-w-xl text-[14.5px] leading-7 text-bone/70">
+        <p className="mt-2.5 max-w-xl text-[14.5px] leading-7 text-bone/85">
           {desc(project, lang)}
         </p>
         <div className="mt-3.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[10px] tracking-widest text-dim ltr">
@@ -233,7 +235,7 @@ function Telemetry({ label }: { label: string }) {
       className="rounded-2xl border border-bone/12 bg-ink/70 p-5 font-mono text-[11px] backdrop-blur-md"
     >
       <div className="flex items-center justify-between border-b border-bone/10 pb-3">
-        <span className="tracking-[0.24em] text-bone/70">{label}</span>
+        <span className="tracking-[0.24em] text-bone/85">{label}</span>
         <span className="flex items-center gap-1.5 text-[10px] text-dim">
           <span className="relative flex h-1.5 w-1.5">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full" style={{ background: ACCENT }} />
@@ -257,7 +259,7 @@ function Telemetry({ label }: { label: string }) {
               x2="300"
               y1={r * 26}
               y2={r * 26}
-              stroke="rgba(237,240,247,0.07)"
+              stroke="rgba(242,236,225,0.07)"
               strokeWidth="1"
             />
           ))}

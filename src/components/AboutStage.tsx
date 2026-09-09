@@ -7,10 +7,11 @@ import Timeline from "./Timeline";
 import { useLang } from "../i18n/LangProvider";
 import { identity } from "../config";
 import { clamp, digits } from "../lib/num";
+import { useHandover } from "../scroll/useHandover";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const ACCENT = "#9d8cff";
+const ACCENT = "#a894ff";
 
 /** Relative emphasis across the stack, not a self-assessment score. */
 const CAPABILITIES: { label: string; level: number }[] = [
@@ -24,12 +25,13 @@ const CAPABILITIES: { label: string; level: number }[] = [
 
 export default function AboutStage() {
   const { t, lang } = useLang();
+  const stageRef = useHandover<HTMLDivElement>(0);
 
   return (
-    <section id="about" className="relative py-20 md:py-24 lg:py-28">
-      <div className="mx-auto max-w-7xl px-6 lg:px-10">
+    <section id="about" className="relative py-16 md:py-20 lg:py-24">
+      <div ref={stageRef} className="mx-auto max-w-7xl px-6 lg:px-10">
         {/* ── header + dossier ─────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:gap-14">
           <div>
             <Reveal variant="fade" duration={700}>
               <p className="mb-4 flex items-center gap-3 font-mono text-[10px] tracking-[0.28em] text-violetx sm:text-[11px] sm:tracking-[0.3em] ltr">
@@ -48,10 +50,10 @@ export default function AboutStage() {
             </Reveal>
 
             <Reveal variant="up" duration={850} delay={160}>
-              <p className="mt-6 text-[16px] leading-8 text-bone/74 sm:text-base">{t.about.p1}</p>
+              <p className="mt-6 text-[16px] leading-8 text-bone/85 sm:text-base">{t.about.p1}</p>
             </Reveal>
             <Reveal variant="up" duration={850} delay={240}>
-              <p className="mt-4 text-[16px] leading-8 text-bone/74 sm:text-base">{t.about.p2}</p>
+              <p className="mt-4 text-[16px] leading-8 text-bone/85 sm:text-base">{t.about.p2}</p>
             </Reveal>
 
             <Reveal variant="up" duration={850} delay={320}>
@@ -66,7 +68,7 @@ export default function AboutStage() {
 
         {/* ── stat strip ───────────────────────────────────────────────── */}
         <Reveal variant="fade" duration={800} delay={120}>
-          <dl className="mt-16 grid grid-cols-2 gap-x-6 gap-y-8 border-y border-bone/10 py-8 sm:grid-cols-4">
+          <dl className="mt-12 grid grid-cols-2 gap-x-6 gap-y-6 border-y border-bone/10 py-6 sm:grid-cols-4">
             {t.about.stats.map((s) => (
               <div key={s.label}>
                 <dt className="text-[clamp(1.5rem,4vw,2.5rem)] font-bold leading-none text-bone tabular-nums">
@@ -81,7 +83,7 @@ export default function AboutStage() {
         </Reveal>
 
         {/* ── the method, drawn as you scroll ──────────────────────────── */}
-        <div className="mt-20 md:mt-24">
+        <div className="mt-14 md:mt-16">
           <Reveal variant="fade" duration={700}>
             <p className="mb-3 flex items-center gap-3 font-mono text-[10px] tracking-[0.3em] text-violetx ltr">
               <span className="h-px w-8 bg-violetx" />
@@ -94,7 +96,7 @@ export default function AboutStage() {
             </h3>
           </Reveal>
 
-          <div className="mt-10">
+          <div className="mt-8">
             <Timeline items={t.about.method} accent={ACCENT} lang={lang} />
           </div>
         </div>
@@ -136,12 +138,12 @@ function Capabilities({ label, lang }: { label: string; lang: "en" | "fa" }) {
   }, []);
 
   return (
-    <div ref={wrapRef} className="mt-10">
+    <div ref={wrapRef} className="mt-8">
       <div className="mb-4 font-mono text-[10px] tracking-[0.3em] text-dim ltr">{label}</div>
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {CAPABILITIES.map((c) => (
           <div key={c.label} className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1">
-            <span className="font-mono text-[11px] tracking-wider text-bone/75 ltr">{c.label}</span>
+            <span className="font-mono text-[11px] tracking-wider text-bone/85 ltr">{c.label}</span>
             <span className="font-mono text-[10px] tabular-nums text-dim ltr">
               {digits(Math.round(c.level * 100), lang)}
             </span>
@@ -206,7 +208,7 @@ function Dossier({
       <Corner className="bottom-3 right-3 border-b border-r" />
 
       <div className="flex items-center justify-between border-b border-bone/10 pb-3">
-        <span className="tracking-[0.26em] text-bone/70">{labels.title}</span>
+        <span className="tracking-[0.26em] text-bone/85">{labels.title}</span>
         <span className="text-[10px] text-dim">v1.0</span>
       </div>
 

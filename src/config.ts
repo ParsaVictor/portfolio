@@ -55,11 +55,15 @@ export const socials: Social[] = [
 export const STAGES = ["hero", "cv", "data", "web", "contact"] as const;
 export type StageId = (typeof STAGES)[number];
 
-/** Stage accent colours — the "cool → warm" journey. */
+/**
+ * The journey runs cool to warm: a paper-white start, a cold lens for vision,
+ * violet through the maths, then lamplight and ember by the time it is asking
+ * you to get in touch.
+ */
 export const STAGE_COLORS: Record<StageId, string> = {
-  hero: "#e9ecf5",
+  hero: "#f2ece1",
   cv: "#35e0ff",
-  data: "#9d8cff",
-  web: "#c8ff3e",
-  contact: "#ff4d6d",
+  data: "#a894ff",
+  web: "#ffb454",
+  contact: "#ff6a5e",
 };

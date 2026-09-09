@@ -58,7 +58,7 @@ export const cvProjects: Project[] = [
     image: "/images/project-pcb.jpg",
     stars: 3,
     stat: "50 classes",
-    accent: "#9d8cff",
+    accent: "#a894ff",
   },
   {
     id: "pcb-classify",
@@ -86,7 +86,7 @@ export const cvProjects: Project[] = [
     image: "/images/project-thief.jpg",
     stars: 4,
     stat: "Retail CCTV",
-    accent: "#ff4d6d",
+    accent: "#ff6a5e",
   },
 ];
 
@@ -103,7 +103,7 @@ export const dataProjects: Project[] = [
     image: "/images/project-pointcloud.jpg",
     stars: 4,
     stat: "5 algorithms",
-    accent: "#9d8cff",
+    accent: "#a894ff",
   },
   {
     id: "ai-template",
@@ -129,7 +129,7 @@ export const dataProjects: Project[] = [
     url: "https://github.com/ParsaVictor/neuromesh",
     stars: 0,
     stat: "context engine",
-    accent: "#c8ff3e",
+    accent: "#ffb454",
   },
 ];
 
@@ -160,7 +160,7 @@ export const webProjects: Project[] = [
     image: "/images/project-realestate.jpg",
     stars: 3,
     stat: "Next.js 16",
-    accent: "#c8ff3e",
+    accent: "#ffb454",
   },
 ];
 

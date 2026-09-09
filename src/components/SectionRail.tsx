@@ -53,7 +53,7 @@ export default function SectionRail() {
             <span
               className="h-2.5 w-2.5 rounded-full border transition-all duration-300"
               style={{
-                borderColor: on ? color : "rgba(237,240,247,0.3)",
+                borderColor: on ? color : "rgba(242,236,225,0.3)",
                 background: on ? color : "transparent",
                 boxShadow: on ? `0 0 12px 2px ${color}aa` : "none",
                 transform: on ? "scale(1.35)" : "scale(1)",

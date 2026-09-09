@@ -11,15 +11,19 @@
   --font-fa: "Vazirmatn Variable", "Space Grotesk", ui-sans-serif, sans-serif;
   --font-mono: "JetBrains Mono", "Vazirmatn Variable", ui-monospace, monospace;
 
-  --color-ink: #05060a;
-  --color-ink-2: #0a0c12;
-  --color-bone: #edf0f7;
-  --color-dim: #8c92a4;
+  /* Warm neutrals. A blue-black ground with a blue-white type on it reads
+     clinical; nudging both toward paper and lamplight is what stops the page
+     feeling like an instrument panel nobody lives in. */
+  --color-ink: #0a0908;
+  --color-ink-2: #13100e;
+  --color-bone: #f2ece1;
+  --color-dim: #a09585;
 
   --color-cyanx: #35e0ff;
-  --color-violetx: #9d8cff;
-  --color-limex: #c8ff3e;
-  --color-rose: #ff4d6d;
+  --color-violetx: #a894ff;
+  --color-amber: #ffb454;
+  --color-limex: #ffb454;
+  --color-rose: #ff6a5e;
 }
 
 :root {
@@ -44,7 +48,7 @@ body {
 
 ::selection {
   background: var(--color-cyanx);
-  color: #04060a;
+  color: #0a0908;
 }
 
 ::-webkit-scrollbar {
@@ -54,7 +58,7 @@ body {
   background: var(--color-ink);
 }
 ::-webkit-scrollbar-thumb {
-  background: #23262f;
+  background: #2b2521;
   border: 2px solid var(--color-ink);
   border-radius: 999px;
 }
@@ -76,6 +80,27 @@ body {
 }
 
 @layer utilities {
+  /* A pool of dark under a block of copy, so text never has to compete with
+     the particle field behind it. Symmetric, so it reads the same in RTL. */
+  .copy-plate {
+    position: relative;
+    isolation: isolate;
+  }
+  .copy-plate::before {
+    content: "";
+    position: absolute;
+    inset: -1.75rem -2.5rem;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: 1.5rem;
+    background: radial-gradient(
+      118% 104% at 50% 50%,
+      rgba(10, 9, 8, 0.92) 0%,
+      rgba(10, 9, 8, 0.72) 52%,
+      rgba(10, 9, 8, 0) 100%
+    );
+  }
+
   .text-balance {
     text-wrap: balance;
   }
@@ -92,17 +117,17 @@ body {
     inset: -50px;
     z-index: 60;
     pointer-events: none;
-    opacity: 0.04;
+    opacity: 0.055;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
   .grid-bg {
     background-image:
-      linear-gradient(rgba(237, 240, 247, 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(237, 240, 247, 0.035) 1px, transparent 1px);
+      linear-gradient(rgba(242, 236, 225, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(242, 236, 225, 0.035) 1px, transparent 1px);
     background-size: 74px 74px;
   }
   .text-stroke {
-    -webkit-text-stroke: 1px rgba(237, 240, 247, 0.28);
+    -webkit-text-stroke: 1px rgba(242, 236, 225, 0.28);
     color: transparent;
   }
 }

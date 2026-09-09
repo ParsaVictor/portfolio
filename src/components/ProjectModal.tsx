@@ -111,7 +111,7 @@ export default function ProjectModal() {
           onClick={closeProject}
           data-cursor-hover
           aria-label={t.project.close}
-          className="absolute end-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full border border-bone/15 bg-ink/70 text-bone/70 backdrop-blur transition-colors hover:border-bone/40 hover:text-bone"
+          className="absolute end-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full border border-bone/15 bg-ink/70 text-bone/85 backdrop-blur transition-colors hover:border-bone/40 hover:text-bone"
         >
           <X size={16} />
         </button>
@@ -145,13 +145,13 @@ export default function ProjectModal() {
             {project.title}
           </h2>
 
-          <p className="mt-4 text-[15px] leading-8 text-bone/75">{desc(project, lang)}</p>
+          <p className="mt-4 text-[15px] leading-8 text-bone/85">{desc(project, lang)}</p>
 
           <div className="mt-6 flex flex-wrap gap-2">
             {project.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-bone/12 px-3 py-1 font-mono text-[10px] text-bone/60 ltr"
+                className="rounded-full border border-bone/12 px-3 py-1 font-mono text-[10px] text-bone/80 ltr"
               >
                 {tag}
               </span>

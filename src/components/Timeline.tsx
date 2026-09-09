@@ -56,7 +56,7 @@ export default function Timeline({
     };
   }, []);
 
-  const rowH = narrow ? 168 : 226;
+  const rowH = narrow ? 148 : 186;
   const height = items.length * rowH;
   const leftX = narrow ? 22 : w * 0.5 - w * 0.24;
   const rightX = narrow ? 22 : w * 0.5 + w * 0.24;
@@ -133,7 +133,7 @@ export default function Timeline({
         aria-hidden
       >
         {/* the ghost route, so the shape reads before it is drawn */}
-        <path d={d} fill="none" stroke="rgba(237,240,247,0.10)" strokeWidth="1.5" />
+        <path d={d} fill="none" stroke="rgba(242,236,225,0.10)" strokeWidth="1.5" />
         <path
           ref={pathRef}
           d={d}
@@ -193,7 +193,7 @@ export default function Timeline({
             <h3 className="mt-2 text-lg font-bold leading-tight text-bone sm:text-xl">
               {m.title}
             </h3>
-            <p className="mt-2 text-[14px] leading-7 text-bone/72 sm:text-[14.5px]">{m.body}</p>
+            <p className="mt-2 text-[14px] leading-7 text-bone/85 sm:text-[14.5px]">{m.body}</p>
           </div>
         );
       })}

@@ -20,7 +20,7 @@ export default function ChapterVeil() {
     return onScroll((s) => {
       const frac = s.stage - Math.floor(s.stage);
       // zero at both ends of a handover, deepest in the middle of it
-      el.style.opacity = String(Math.sin(Math.max(0, Math.min(1, frac)) * Math.PI) * 0.55);
+      el.style.opacity = String(Math.sin(Math.max(0, Math.min(1, frac)) * Math.PI) * 0.3);
     });
   }, []);
 

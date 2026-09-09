@@ -6,6 +6,7 @@ import { GithubIcon, LinkedinIcon, MailIcon } from "./icons";
 import { useLang } from "../i18n/LangProvider";
 import { identity, socials } from "../config";
 import { digits } from "../lib/num";
+import { useHandover } from "../scroll/useHandover";
 
 const ICONS: Record<string, typeof GithubIcon> = {
   github: GithubIcon,
@@ -33,6 +34,7 @@ export default function Contact() {
   const { t, lang } = useLang();
   const [copied, setCopied] = useState(false);
   const localTime = useLocalTime();
+  const stageRef = useHandover<HTMLDivElement>(4);
 
   function copyEmail() {
     navigator.clipboard?.writeText(identity.email);
@@ -43,7 +45,7 @@ export default function Contact() {
   return (
     <section id="contact" data-scene="4" className="relative overflow-hidden py-24 md:py-28 lg:py-32">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_50%,rgba(255,77,109,0.12),transparent)]" />
-      <div className="relative mx-auto max-w-4xl px-6 text-center lg:px-10">
+      <div ref={stageRef} className="copy-plate relative mx-auto max-w-4xl px-6 text-center lg:px-10">
         <Reveal variant="fade" duration={700}>
           <div className="mb-5 flex items-center justify-center gap-3 font-mono text-[10px] tracking-[0.28em] text-rose sm:text-[11px] sm:tracking-[0.3em] ltr">
             <span className="h-px w-8 bg-rose" />
@@ -62,7 +64,7 @@ export default function Contact() {
         </Reveal>
 
         <Reveal variant="up" duration={850} delay={180}>
-          <p className="mx-auto mt-6 max-w-xl text-[16px] leading-8 text-bone/72 sm:text-base">
+          <p className="mx-auto mt-6 max-w-xl text-[16px] leading-8 text-bone/85 sm:text-base">
             {t.contact.desc}
           </p>
         </Reveal>

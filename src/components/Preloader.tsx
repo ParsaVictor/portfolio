@@ -85,7 +85,7 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
       aria-label={t.preloader.status}
     >
       {/* the swarm is already blooming behind this, so keep the ground dark */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[70vmax] w-[70vmax] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(53,224,255,0.13),transparent_62%)]" />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[70vmax] w-[70vmax] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,180,84,0.14),transparent_60%)]" />
 
       <div
         className="relative flex flex-col items-center"
@@ -103,7 +103,7 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
               cy={R + 12}
               r={R}
               fill="none"
-              stroke="rgba(237,240,247,0.09)"
+              stroke="rgba(242,236,225,0.09)"
               strokeWidth="1.5"
             />
             <circle
@@ -121,8 +121,8 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
             <defs>
               <linearGradient id="mpk-load" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stopColor="#35e0ff" />
-                <stop offset="55%" stopColor="#9d8cff" />
-                <stop offset="100%" stopColor="#ff4d6d" />
+                <stop offset="55%" stopColor="#a894ff" />
+                <stop offset="100%" stopColor="#ff6a5e" />
               </linearGradient>
             </defs>
           </svg>
@@ -145,7 +145,7 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
               className="flex items-center gap-2 transition-opacity duration-500"
               style={{ opacity: i > line ? 0.16 : i === line ? 1 : 0.4 }}
             >
-              <span style={{ color: i <= line ? "#35e0ff" : "rgba(237,240,247,0.25)" }}>
+              <span style={{ color: i <= line ? "#ffb454" : "rgba(242,236,225,0.25)" }}>
                 {i < line ? "✓" : i === line ? "▸" : "·"}
               </span>
               <span className={i === line ? "text-bone/85" : "text-dim"}>{s}</span>

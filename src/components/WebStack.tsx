@@ -7,6 +7,7 @@ import { useLang } from "../i18n/LangProvider";
 import { desc, webProjects, type Project } from "../data/projects";
 import { STAGE_COLORS } from "../config";
 import { useScrub } from "../scroll/useScrub";
+import { useHandover } from "../scroll/useHandover";
 import { clamp } from "../lib/num";
 import { openProject, shouldOpenInPage } from "../state/projectModal";
 
@@ -40,6 +41,7 @@ export default function WebStack() {
   }, []);
 
   const wrapRef = useScrub(onScrub);
+  const stageRef = useHandover<HTMLDivElement>(3);
 
   return (
     <section id="web" data-scene="3" className="relative">
@@ -64,7 +66,10 @@ export default function WebStack() {
         style={{ height: (N + 1) * 88 + "vh" }}
       >
         <div className="sticky top-0 flex h-screen items-center overflow-hidden">
-          <div className="mx-auto grid w-full max-w-[1560px] grid-cols-[minmax(0,26%)_minmax(0,74%)] items-center gap-10 px-10">
+          <div
+            ref={stageRef}
+            className="mx-auto grid w-full max-w-[1560px] grid-cols-[minmax(0,26%)_minmax(0,74%)] items-center gap-10 px-10"
+          >
             <SideLabel
               index={t.web.index}
               kicker={t.web.kicker}
@@ -73,7 +78,7 @@ export default function WebStack() {
             />
 
             <div className="grid grid-cols-[minmax(0,320px)_minmax(0,1fr)] items-center gap-10">
-              <div>
+              <div className="copy-plate">
                 <StageCopy accent={ACCENT} meta={t.web} />
                 <p className="mt-8 border-t border-bone/10 pt-5 font-mono text-[10px] leading-6 tracking-[0.2em] text-dim ltr">
                   {t.web.stack}
@@ -168,7 +173,7 @@ function BrowserCard({
         )}
         <span
           className="absolute bottom-3 left-3 rounded-md px-2 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
-          style={{ background: "rgba(3,5,9,0.72)", color: project.accent }}
+          style={{ background: "rgba(8,7,6,0.72)", color: project.accent }}
         >
           {project.stat}
         </span>
@@ -177,14 +182,14 @@ function BrowserCard({
       <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
         <div className="min-w-0">
           <h3 className="text-lg font-bold text-bone sm:text-xl ltr">{project.title}</h3>
-          <p className="mt-2 max-w-xl text-[14.5px] leading-7 text-bone/72">
+          <p className="mt-2 max-w-xl text-[14.5px] leading-7 text-bone/85">
             {desc(project, lang)}
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {project.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-bone/10 px-2.5 py-1 font-mono text-[10px] text-bone/72 ltr"
+                className="rounded-full border border-bone/10 px-2.5 py-1 font-mono text-[10px] text-bone/85 ltr"
               >
                 {tag}
               </span>

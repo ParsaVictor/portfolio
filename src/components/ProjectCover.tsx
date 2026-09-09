@@ -84,7 +84,7 @@ export default function ProjectCover({
         </linearGradient>
       </defs>
 
-      <rect width={W} height={H} fill="#06070c" />
+      <rect width={W} height={H} fill="#0b0a09" />
       <rect width={W} height={H} fill={`url(#cv-${seed})`} />
 
       {/* faint measurement grid */}
@@ -95,7 +95,7 @@ export default function ProjectCover({
           x2={W}
           y1={(i * H) / 8}
           y2={(i * H) / 8}
-          stroke="rgba(237,240,247,0.05)"
+          stroke="rgba(242,236,225,0.05)"
           strokeWidth="1"
         />
       ))}
@@ -106,7 +106,7 @@ export default function ProjectCover({
           y2={H}
           x1={(i * W) / 10}
           x2={(i * W) / 10}
-          stroke="rgba(237,240,247,0.05)"
+          stroke="rgba(242,236,225,0.05)"
           strokeWidth="1"
         />
       ))}
