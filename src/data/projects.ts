@@ -118,19 +118,6 @@ export const dataProjects: Project[] = [
     stat: "config-driven",
     accent: "#35e0ff",
   },
-  {
-    id: "neuromesh",
-    title: "Neuromesh",
-    descEn:
-      "The biomimetic context engine & neural runtime for AI coding assistants — a memory that grows like a living brain.",
-    descFa:
-      "موتورِ زمینه‌ی بیومیمتیک و رانتایمِ عصبی برای دستیارهای کدنویسیِ هوش مصنوعی — حافظه‌ای که مثلِ یک مغزِ زنده رشد می‌کند.",
-    tags: ["Context Engine", "AI Tooling", "TypeScript"],
-    url: "https://github.com/ParsaVictor/neuromesh",
-    stars: 0,
-    stat: "context engine",
-    accent: "#ffb454",
-  },
 ];
 
 export const webProjects: Project[] = [
@@ -157,6 +144,7 @@ export const webProjects: Project[] = [
       "پلتفرمِ فارسیِ املاکِ مبتنی بر هوش مصنوعی — Next.js 16، رابطِ شیشه‌ایِ RTL و تجربه‌ی حرکتیِ روان با Framer Motion.",
     tags: ["Next.js", "Framer Motion", "RTL"],
     url: "https://github.com/ParsaVictor/melkai-realestate-platform",
+    website: "https://amlak-s46a.eshop3.pages.dev",
     image: "/images/project-realestate.jpg",
     stars: 3,
     stat: "Next.js 16",

@@ -14,8 +14,13 @@ export const identity = {
   lastFa: "کرکوتی",
   handle: "@ParsaVictor",
   email: "1.parsa.karkooti@gmail.com",
-  // Isfahan, Iran
-  coords: { lat: 32.6539, lon: 51.666 },
+  affiliation: "Razi University",
+  affiliationFa: "دانشگاه رازی",
+  baseEn: "Kermanshah & Tehran, Iran",
+  baseFa: "کرمانشاه و تهران، ایران",
+  cityShort: "KERMANSHAH · TEHRAN",
+  // Kermanshah
+  coords: { lat: 34.3277, lon: 47.0778 },
   timezone: "Asia/Tehran",
 };
 

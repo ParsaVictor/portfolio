@@ -4,7 +4,7 @@ A motion-led personal site for **Mohammad Parsa Karkooti**, AI / computer-vision
 engineer. Dark, instrument-panel aesthetic built around a single WebGL particle
 form that morphs through the story of the work as you scroll.
 
-**Live:** https://parsa-karkooti.1-parsa-karkooti.workers.dev
+**Live:** https://parsavictor.pages.dev
 
 ---
 

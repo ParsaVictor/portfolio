@@ -114,7 +114,7 @@ export default function Contact() {
               {t.contact.available}
             </span>
             <span>
-              {t.contact.localTime}: {digits(localTime, lang)} · ISFAHAN
+              {t.contact.localTime}: {digits(localTime, lang)} · {identity.cityShort}
             </span>
           </div>
         </Reveal>

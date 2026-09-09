@@ -11,6 +11,9 @@ import { useQuietZone } from "../state/quietZone";
 
 const ACCENT = "#a894ff";
 
+/** One colour per method step, running the site's cool-to-warm journey. */
+const STEP_COLORS = ["#35e0ff", "#7cc4ff", "#a894ff", "#ffb454", "#ff6a5e"];
+
 /**
  * About, staged as three acts rather than one long column.
  *
@@ -56,7 +59,7 @@ export default function AboutStage() {
           </div>
 
           <Reveal variant="fade" duration={800} delay={120}>
-            <dl className="mt-14 grid grid-cols-2 gap-x-6 gap-y-6 border-y border-bone/10 py-6 sm:grid-cols-4">
+            <dl className="mt-12 grid grid-cols-2 gap-x-6 gap-y-6 border-y border-bone/10 py-6 sm:grid-cols-4">
               {t.about.stats.map((s) => (
                 <div key={s.label}>
                   <dt className="text-[clamp(1.5rem,4vw,2.5rem)] font-bold leading-none tabular-nums text-bone">
@@ -74,7 +77,7 @@ export default function AboutStage() {
         {/* ───────────────────── ACT II · the stack, given the room ───── */}
         <div
           ref={quietRef}
-          className="relative mt-24 flex min-h-[100svh] flex-col justify-center md:mt-32"
+          className="relative mt-16 flex min-h-[84svh] flex-col justify-center md:mt-20"
         >
           <div className="mx-auto w-full max-w-7xl px-6 lg:px-10">
             <ActMark index="II" label={t.about.skillsLabel} accent="#35e0ff" />
@@ -90,7 +93,7 @@ export default function AboutStage() {
         </div>
 
         {/* ──────────────────────── ACT III · the method ──────────────── */}
-        <div className="mx-auto mt-24 max-w-7xl px-6 md:mt-32 lg:px-10">
+        <div className="mx-auto mt-16 max-w-7xl px-6 md:mt-20 lg:px-10">
           <ActMark index="III" label={t.about.methodKicker} accent={ACCENT} />
           <Reveal variant="clip" duration={900} delay={80}>
             <h3 className="mt-4 max-w-2xl text-[clamp(1.4rem,3.6vw,2.25rem)] font-bold leading-[1.2] text-bone">
@@ -98,8 +101,8 @@ export default function AboutStage() {
             </h3>
           </Reveal>
 
-          <div className="relative mt-10 overflow-hidden rounded-3xl px-2 py-6 sm:px-6">
-            <Timeline items={t.about.method} accent={ACCENT} lang={lang} />
+          <div className="relative mt-8 overflow-hidden rounded-3xl px-2 py-4 sm:px-6">
+            <Timeline items={t.about.method} accent={ACCENT} colors={STEP_COLORS} lang={lang} />
           </div>
         </div>
       </div>
@@ -135,7 +138,15 @@ function Dossier({
   labels,
 }: {
   lang: "en" | "fa";
-  labels: { title: string; name: string; role: string; base: string; status: string; open: string };
+  labels: {
+    title: string;
+    name: string;
+    role: string;
+    base: string;
+    affiliation: string;
+    status: string;
+    open: string;
+  };
 }) {
   const [now, setNow] = useState("");
 
@@ -155,7 +166,8 @@ function Dossier({
   const rows: [string, string][] = [
     [labels.name, identity.nameEn],
     [labels.role, "AI / Computer-Vision Engineer"],
-    [labels.base, "Isfahan, Iran · UTC+3:30"],
+    [labels.base, (lang === "fa" ? identity.baseFa : identity.baseEn) + " · UTC+3:30"],
+    [labels.affiliation, lang === "fa" ? identity.affiliationFa : identity.affiliation],
     ["lat / lon", identity.coords.lat.toFixed(4) + " / " + identity.coords.lon.toFixed(4)],
     ["local time", now],
   ];

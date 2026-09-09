@@ -92,7 +92,7 @@ export default function InteractivePhoto({ src }: { src: string }) {
 
       <div className="mt-3 flex items-center justify-between font-mono text-[10px] tracking-widest text-dim ltr">
         <span>{t.hero.photoMeta}</span>
-        <span className="text-cyanx/80">ISFAHAN · IR</span>
+        <span className="text-cyanx/80">KERMANSHAH · IR</span>
       </div>
 
       <svg width="0" height="0" className="absolute">

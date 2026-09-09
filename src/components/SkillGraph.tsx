@@ -5,10 +5,11 @@ type Branch = { key: string; label: string; color: string; leaves: string[] };
 /** Grounded in what the repos actually use — no aspirational entries. */
 const BRANCHES: Branch[] = [
   { key: "vision", label: "VISION", color: "#35e0ff", leaves: ["YOLO", "OpenCV", "ByteTrack", "MediaPipe"] },
-  { key: "learning", label: "LEARNING", color: "#a894ff", leaves: ["PyTorch", "scikit-learn", "Random Forest"] },
+  { key: "deep", label: "DEEP LEARNING", color: "#7cc4ff", leaves: ["PyTorch", "CNN", "Transfer Learning"] },
+  { key: "ml", label: "MACHINE LEARNING", color: "#a894ff", leaves: ["scikit-learn", "Random Forest", "Explainable AI"] },
   { key: "data", label: "DATA", color: "#ffb454", leaves: ["NumPy", "Open3D", "B-Spline"] },
   { key: "web", label: "WEB", color: "#ff6a5e", leaves: ["React", "TypeScript", "Three.js", "Next.js"] },
-  { key: "infra", label: "INFRA", color: "#8fd67a", leaves: ["Docker", "Git", "CI"] },
+  { key: "infra", label: "INFRA", color: "#8fd67a", leaves: ["Docker", "Git", "MLOps"] },
 ];
 
 type Node = {
@@ -26,7 +27,9 @@ type Node = {
 /** A mote riding one edge of the graph. */
 type Mote = { edge: number; t: number; speed: number; size: number };
 
-const MOTES_PER_EDGE = 3;
+const MOTES_PER_EDGE = 4;
+/** Seconds for one pulse to travel hub → branch → leaf. */
+const PULSE_PERIOD = 5200;
 
 /**
  * The stack as a living graph.
@@ -154,6 +157,15 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
 
       // live position: layout spot + seeded float + a lean toward the pointer
       const depth = (n: Node) => (n.kind === "hub" ? 0.35 : n.kind === "branch" ? 0.7 : 1);
+      const tier = (n: Node) => (n.kind === "hub" ? 0 : n.kind === "branch" ? 1 : 2);
+
+      // a charge leaves the hub and travels outward on a loop; each ring lights
+      // as it passes, which is what makes the graph read as powered rather than drawn
+      const wave = ((time % PULSE_PERIOD) / PULSE_PERIOD) * 3.1;
+      const charge = (n: Node) => {
+        const d = wave - tier(n);
+        return Math.exp(-(d * d) / 0.14);
+      };
       const px = (n: Node) =>
         n.x + Math.sin(time * 0.00034 + n.seed) * 5 * depth(n) + lean.current.x * 16 * depth(n);
       const py = (n: Node) =>
@@ -177,8 +189,11 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
         ctx.beginPath();
         ctx.moveTo(px(p), py(p));
         ctx.lineTo(px(n), py(n));
-        ctx.strokeStyle = on ? n.color : "rgba(242,236,225,0.10)";
-        ctx.lineWidth = on ? 1.5 : 0.9;
+        const q = Math.max(charge(n), charge(p));
+        ctx.strokeStyle = on
+          ? n.color
+          : "rgba(242,236,225," + (0.09 + q * 0.16).toFixed(3) + ")";
+        ctx.lineWidth = on ? 1.5 : 0.9 + q * 0.5;
         ctx.stroke();
       });
 
@@ -201,7 +216,7 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.fillStyle = on ? "#ffffff" : n.color;
-        ctx.globalAlpha = (on ? 0.95 : 0.5) * fade;
+        ctx.globalAlpha = (on ? 0.95 : 0.42 + charge(n) * 0.4) * fade;
         ctx.fill();
 
         ctx.beginPath();
@@ -219,6 +234,8 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
         const x = px(n);
         const y = py(n);
 
+        const q = charge(n);
+
         if (n.kind === "hub") {
           for (let k = 0; k < 2; k++) {
             const pulse = ((time * 0.00022 + k * 0.5) % 1);
@@ -230,17 +247,21 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
           }
         }
 
-        if (on) {
+        // the halo the charge leaves behind
+        if (q > 0.02 || on) {
+          const halo = Math.max(q, on ? 0.85 : 0);
           ctx.beginPath();
-          ctx.arc(x, y, n.r * 3.4, 0, Math.PI * 2);
-          ctx.fillStyle = n.color + "1f";
+          ctx.arc(x, y, n.r * (2.6 + halo * 2.4), 0, Math.PI * 2);
+          ctx.fillStyle = n.color;
+          ctx.globalAlpha = halo * 0.16;
           ctx.fill();
+          ctx.globalAlpha = 1;
         }
 
         ctx.beginPath();
-        ctx.arc(x, y, n.r * (on ? 1.4 : 1), 0, Math.PI * 2);
+        ctx.arc(x, y, n.r * (on ? 1.45 : 1 + q * 0.35), 0, Math.PI * 2);
         ctx.fillStyle = on ? n.color : n.kind === "leaf" ? "rgba(242,236,225,0.45)" : n.color;
-        ctx.globalAlpha = on ? 1 : n.kind === "leaf" ? 0.8 : 0.9;
+        ctx.globalAlpha = on ? 1 : Math.min(1, (n.kind === "leaf" ? 0.72 : 0.85) + q * 0.3);
         ctx.fill();
         ctx.globalAlpha = 1;
       });
@@ -306,7 +327,7 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
     <div
       ref={boxRef}
       className="relative w-full overflow-hidden rounded-3xl"
-      style={{ height: "clamp(460px, 72vh, 760px)" }}
+      style={{ height: "clamp(430px, 64vh, 680px)" }}
     >
       <canvas
         ref={canvasRef}

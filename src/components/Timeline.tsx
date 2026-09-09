@@ -18,16 +18,21 @@ export type Milestone = { step: string; title: string; body: string };
 export default function Timeline({
   items,
   accent,
+  colors,
   lang,
 }: {
   items: Milestone[];
   accent: string;
+  /** One colour per step; the connector grades through them as it draws. */
+  colors?: string[];
   lang: "en" | "fa";
 }) {
+  const hue = (i: number) => colors?.[i] ?? accent;
   const wrapRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
   const tipRef = useRef<SVGCircleElement>(null);
   const nodeRefs = useRef<(SVGCircleElement | null)[]>([]);
+  const haloRefs = useRef<(SVGCircleElement | null)[]>([]);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const [w, setW] = useState(0);
@@ -93,6 +98,9 @@ export default function Timeline({
         tip.setAttribute("cx", String(pt.x));
         tip.setAttribute("cy", String(pt.y));
         tip.style.opacity = drawn > 0.004 && drawn < 0.999 ? "1" : "0";
+        const ahead = Math.min(items.length - 1, Math.floor(drawn * items.length));
+        tip.setAttribute("fill", "#fff");
+        tip.style.filter = "drop-shadow(0 0 12px " + hue(ahead) + ")";
       }
       // light each node — and its card — once the front has passed it
       for (let i = 0; i < items.length; i++) {
@@ -100,7 +108,12 @@ export default function Timeline({
         const n = nodeRefs.current[i];
         if (n) {
           n.style.opacity = String(0.35 + reached * 0.65);
-          n.setAttribute("r", String(reached ? 5.5 : 3.5));
+          n.setAttribute("r", String(reached ? 6 : 3.5));
+        }
+        const halo = haloRefs.current[i];
+        if (halo) {
+          halo.style.opacity = String(reached * 0.28);
+          halo.setAttribute("r", String(reached ? 18 : 10));
         }
         const c = cardRefs.current[i];
         if (c) c.style.setProperty("--lit", String(reached));
@@ -121,7 +134,7 @@ export default function Timeline({
     });
     ScrollTrigger.refresh();
     return () => st.kill();
-  }, [w, narrow, items.length]);
+  }, [w, narrow, items.length, colors]);
 
   return (
     <div ref={wrapRef} className="relative" style={{ height: height + "px" }}>
@@ -134,27 +147,49 @@ export default function Timeline({
       >
         {/* the ghost route, so the shape reads before it is drawn */}
         <path d={d} fill="none" stroke="rgba(242,236,225,0.10)" strokeWidth="1.5" />
+        <defs>
+          <linearGradient id="mpk-method" x1="0" y1="0" x2="0" y2="1">
+            {items.map((_, i) => (
+              <stop
+                key={i}
+                offset={(i / Math.max(1, items.length - 1)) * 100 + "%"}
+                stopColor={hue(i)}
+              />
+            ))}
+          </linearGradient>
+        </defs>
         <path
           ref={pathRef}
           d={d}
           fill="none"
-          stroke={accent}
-          strokeWidth="1.8"
+          stroke="url(#mpk-method)"
+          strokeWidth="2.2"
           strokeLinecap="round"
-          style={{ filter: "drop-shadow(0 0 6px " + accent + "55)" }}
+          style={{ filter: "drop-shadow(0 0 9px " + accent + "66)" }}
         />
         {items.map((_, i) => (
-          <circle
-            key={i}
-            ref={(el) => {
-              nodeRefs.current[i] = el;
-            }}
-            cx={nodeX(i)}
-            cy={nodeY(i)}
-            r={3.5}
-            fill={accent}
-            style={{ opacity: 0.35, transition: "r 320ms ease, opacity 320ms ease" }}
-          />
+          <g key={i}>
+            <circle
+              ref={(el) => {
+                haloRefs.current[i] = el;
+              }}
+              cx={nodeX(i)}
+              cy={nodeY(i)}
+              r={14}
+              fill={hue(i)}
+              style={{ opacity: 0, transition: "opacity 420ms ease, r 420ms ease" }}
+            />
+            <circle
+              ref={(el) => {
+                nodeRefs.current[i] = el;
+              }}
+              cx={nodeX(i)}
+              cy={nodeY(i)}
+              r={3.5}
+              fill={hue(i)}
+              style={{ opacity: 0.35, transition: "r 320ms ease, opacity 320ms ease" }}
+            />
+          </g>
         ))}
         <circle
           ref={tipRef}
@@ -191,12 +226,16 @@ export default function Timeline({
             <div
               className="rounded-2xl border p-4 backdrop-blur-sm transition-colors duration-500 sm:p-5"
               style={{
-                borderColor: "color-mix(in oklab, " + accent + " calc(var(--lit) * 38%), rgba(242,236,225,0.09))",
+                borderColor:
+                  "color-mix(in oklab, " + hue(i) + " calc(var(--lit) * 46%), rgba(242,236,225,0.09))",
                 background: "rgba(10,9,8,0.55)",
-                boxShadow: "0 0 0 0 transparent",
+                boxShadow: "0 18px 60px -30px color-mix(in oklab, " + hue(i) + " calc(var(--lit) * 85%), transparent)",
               }}
             >
-              <div className="font-mono text-[10px] tracking-[0.34em] text-dim ltr">
+              <div
+                className="font-mono text-[10px] tracking-[0.34em] ltr"
+                style={{ color: "color-mix(in oklab, " + hue(i) + " calc(var(--lit) * 100%), #a09585)" }}
+              >
                 {digits(m.step, lang)}
               </div>
               <h3 className="mt-2 text-lg font-bold leading-tight text-bone sm:text-xl">
