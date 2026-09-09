@@ -1,0 +1,13 @@
+/* TEAM */
+Name: Mohammad Parsa Karkooti (ParsaVictor)
+Role: AI Engineer — Computer Vision, Machine Learning, Full-Stack
+Location: Kermanshah & Tehran, Iran
+GitHub: https://github.com/ParsaVictor
+LinkedIn: https://www.linkedin.com/in/parsa-karkooti/
+Email: 1.parsa.karkooti@gmail.com
+
+/* SITE */
+Last update: 2026/09/10
+Standards: HTML5, CSS3, JSON-LD
+Components: React, Vite, Tailwind CSS, GSAP, three.js
+Software: VS Code, Claude Code
