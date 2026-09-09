@@ -8,6 +8,7 @@ import { desc, webProjects, type Project } from "../data/projects";
 import { STAGE_COLORS } from "../config";
 import { useScrub } from "../scroll/useScrub";
 import { clamp } from "../lib/num";
+import { openProject, shouldOpenInPage } from "../state/projectModal";
 
 const ACCENT = STAGE_COLORS.web;
 const N = webProjects.length;
@@ -50,7 +51,7 @@ export default function WebStack() {
         <div className="space-y-6 px-6 pb-16">
           {webProjects.map((p, i) => (
             <Reveal key={p.id} variant="up" duration={850} delay={i * 100}>
-              <BrowserCard project={p} index={i} lang={lang} view={t.project.view} />
+              <BrowserCard project={p} index={i} lang={lang} view={t.project.open} />
             </Reveal>
           ))}
         </div>
@@ -89,7 +90,7 @@ export default function WebStack() {
                     className="absolute inset-x-0 top-1/2 -translate-y-1/2 will-change-transform"
                     style={{ transition: "opacity 180ms linear" }}
                   >
-                    <BrowserCard project={p} index={i} lang={lang} view={t.project.view} />
+                    <BrowserCard project={p} index={i} lang={lang} view={t.project.open} />
                   </div>
                 ))}
               </div>
@@ -125,7 +126,12 @@ function BrowserCard({
       target="_blank"
       rel="noreferrer"
       data-cursor-hover
-      className="group block overflow-hidden rounded-xl border border-bone/12 bg-ink/90 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)] backdrop-blur-md transition-colors duration-300 hover:border-bone/30"
+      onClick={(e) => {
+        if (!shouldOpenInPage(e)) return;
+        e.preventDefault();
+        openProject(project);
+      }}
+      className="group block cursor-pointer overflow-hidden rounded-xl border border-bone/12 bg-ink/90 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)] backdrop-blur-md transition-colors duration-300 hover:border-bone/30"
     >
       {/* window chrome */}
       <div dir="ltr" className="flex items-center gap-3 border-b border-bone/10 px-4 py-2.5">
@@ -171,14 +177,14 @@ function BrowserCard({
       <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
         <div className="min-w-0">
           <h3 className="text-lg font-bold text-bone sm:text-xl ltr">{project.title}</h3>
-          <p className="mt-2 max-w-xl text-[13.5px] leading-7 text-bone/55">
+          <p className="mt-2 max-w-xl text-[14.5px] leading-7 text-bone/72">
             {desc(project, lang)}
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {project.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-bone/10 px-2.5 py-1 font-mono text-[10px] text-bone/55 ltr"
+                className="rounded-full border border-bone/10 px-2.5 py-1 font-mono text-[10px] text-bone/72 ltr"
               >
                 {tag}
               </span>

@@ -48,10 +48,10 @@ export default function AboutStage() {
             </Reveal>
 
             <Reveal variant="up" duration={850} delay={160}>
-              <p className="mt-6 text-[15px] leading-8 text-bone/60 sm:text-base">{t.about.p1}</p>
+              <p className="mt-6 text-[16px] leading-8 text-bone/74 sm:text-base">{t.about.p1}</p>
             </Reveal>
             <Reveal variant="up" duration={850} delay={240}>
-              <p className="mt-4 text-[15px] leading-8 text-bone/60 sm:text-base">{t.about.p2}</p>
+              <p className="mt-4 text-[16px] leading-8 text-bone/74 sm:text-base">{t.about.p2}</p>
             </Reveal>
 
             <Reveal variant="up" duration={850} delay={320}>

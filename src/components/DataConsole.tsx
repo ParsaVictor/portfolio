@@ -8,6 +8,8 @@ import { useLang } from "../i18n/LangProvider";
 import { dataProjects, desc, type Project } from "../data/projects";
 import { STAGE_COLORS } from "../config";
 import { clamp, digits } from "../lib/num";
+import { openProject, shouldOpenInPage } from "../state/projectModal";
+import ProjectCover from "./ProjectCover";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -33,7 +35,7 @@ export default function DataConsole() {
 
             <div className="mt-12 border-t border-bone/10">
               {dataProjects.map((p, i) => (
-                <FocusRow key={p.id} project={p} index={i} lang={lang} view={t.project.view} />
+                <FocusRow key={p.id} project={p} index={i} lang={lang} open={t.project.open} />
               ))}
             </div>
           </div>
@@ -54,12 +56,12 @@ function FocusRow({
   project,
   index,
   lang,
-  view,
+  open,
 }: {
   project: Project;
   index: number;
   lang: "en" | "fa";
-  view: string;
+  open: string;
 }) {
   const ref = useRef<HTMLAnchorElement>(null);
 
@@ -73,11 +75,15 @@ function FocusRow({
     // brightest as the row crosses the middle of the viewport, dim either side
     const st = ScrollTrigger.create({
       trigger: el,
-      start: "top 85%",
-      end: "bottom 15%",
+      start: "top 88%",
+      end: "bottom 12%",
       onUpdate: (self) => {
         const f = Math.sin(clamp(self.progress, 0, 1) * Math.PI);
-        el.style.setProperty("--focus", String(Math.pow(f, 0.6)));
+        el.style.setProperty("--focus", String(Math.pow(f, 0.5)));
+      },
+      onRefresh: (self) => {
+        const f = Math.sin(clamp(self.progress, 0, 1) * Math.PI);
+        el.style.setProperty("--focus", String(Math.pow(f, 0.5)));
       },
     });
     return () => st.kill();
@@ -90,43 +96,83 @@ function FocusRow({
       target="_blank"
       rel="noreferrer"
       data-cursor-hover
-      className="group relative grid grid-cols-[auto_1fr] items-start gap-x-5 gap-y-3 border-b border-bone/10 py-7 sm:grid-cols-[auto_1fr_auto] sm:py-9"
+      onClick={(e) => {
+        if (!shouldOpenInPage(e)) return;
+        e.preventDefault();
+        openProject(project);
+      }}
+      className="group relative grid cursor-pointer grid-cols-1 items-center gap-5 border-b border-bone/10 py-6 sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)] sm:gap-7 sm:py-8"
       style={{
-        ["--focus" as string]: "0.25",
-        opacity: "calc(0.42 + var(--focus) * 0.58)",
-        transition: "opacity 120ms linear",
+        ["--focus" as string]: "0.35",
+        opacity: "calc(0.62 + var(--focus) * 0.38)",
+        transition: "opacity 140ms linear",
       }}
     >
       {/* the focus bar that rides the list as you scroll */}
       <span
         aria-hidden
-        className="absolute inset-y-0 start-0 w-px origin-center"
+        className="absolute inset-y-0 start-0 hidden w-px origin-center sm:block"
         style={{ background: ACCENT, transform: "scaleY(var(--focus))", opacity: 0.9 }}
       />
 
-      <span className="ps-4 font-mono text-[11px] tabular-nums tracking-[0.28em] text-dim ltr sm:ps-5">
-        {digits(String(index + 1).padStart(2, "0"), lang)}
-      </span>
-
-      <div className="min-w-0">
-        <h3 className="text-lg font-bold text-bone transition-colors group-hover:text-[color:var(--accent)] sm:text-2xl ltr"
-          style={{ ["--accent" as string]: project.accent }}
+      {/* every project gets a visual — a screenshot where one exists, generated
+          cover art in the site's own language where one does not */}
+      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-bone/10 bg-black sm:ms-5">
+        {project.image ? (
+          <img
+            src={project.image}
+            alt={project.title}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+          />
+        ) : (
+          <ProjectCover
+            seed={project.id}
+            accent={project.accent}
+            variant={project.id === "ai-template" ? "grid" : "mesh"}
+            className="transition-transform duration-700 group-hover:scale-[1.04]"
+          />
+        )}
+        <span
+          className="absolute bottom-2 start-2 rounded-md px-2 py-0.5 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
+          style={{ background: "rgba(3,5,9,0.7)", color: project.accent }}
         >
-          {project.title}
-        </h3>
-        <p className="mt-2 max-w-xl text-[13.5px] leading-7 text-bone/55">{desc(project, lang)}</p>
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[10px] tracking-widest text-dim ltr">
-          {project.tags.map((tag) => (
-            <span key={tag}>{tag}</span>
-          ))}
-        </div>
+          {project.stat}
+        </span>
       </div>
 
-      <div className="col-span-2 flex items-center gap-2 ps-4 text-xs font-semibold sm:col-span-1 sm:ps-0" style={{ color: project.accent }}>
-        <span className="font-mono text-[10px] tracking-widest ltr">{project.stat}</span>
-        <span className="mx-1 hidden h-px w-6 sm:block" style={{ background: project.accent }} />
-        <span className="hidden sm:inline">{view}</span>
-        <ArrowUpRight size={14} className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+      <div className="min-w-0">
+        <div className="flex items-baseline gap-3">
+          <span className="font-mono text-[11px] tabular-nums tracking-[0.28em] text-dim ltr">
+            {digits(String(index + 1).padStart(2, "0"), lang)}
+          </span>
+          <h3
+            className="text-xl font-bold text-bone transition-colors group-hover:text-[color:var(--accent)] sm:text-2xl ltr"
+            style={{ ["--accent" as string]: project.accent }}
+          >
+            {project.title}
+          </h3>
+        </div>
+        <p className="mt-2.5 max-w-xl text-[14.5px] leading-7 text-bone/70">
+          {desc(project, lang)}
+        </p>
+        <div className="mt-3.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[10px] tracking-widest text-dim ltr">
+          {project.tags.map((tag) => (
+            <span key={tag} className="rounded-full border border-bone/10 px-2.5 py-1">
+              {tag}
+            </span>
+          ))}
+        </div>
+        <div
+          className="mt-4 flex items-center gap-1.5 text-xs font-semibold"
+          style={{ color: project.accent }}
+        >
+          <span>{open}</span>
+          <ArrowUpRight
+            size={14}
+            className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+          />
+        </div>
       </div>
     </a>
   );

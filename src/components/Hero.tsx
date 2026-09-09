@@ -90,7 +90,7 @@ export default function Hero() {
         {/* ── C · pitch + actions ──────────────────────── */}
         <div className="lg:col-start-1 lg:row-start-2 lg:self-start">
           <Reveal variant="up" duration={800} delay={480}>
-            <p className="max-w-xl text-balance text-[15px] leading-8 text-bone/60 sm:text-base">
+            <p className="max-w-xl text-balance text-[16px] leading-8 text-bone/74 sm:text-base">
               {t.hero.lead}{" "}
               {t.hero.leadWords.map((w, i) => (
                 <span key={w}>

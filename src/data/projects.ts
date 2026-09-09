@@ -7,6 +7,8 @@ export type Project = {
   descFa: string;
   tags: string[];
   url: string;
+  /** A dedicated site for this project, once one exists. */
+  website?: string;
   image?: string;
   stars: number;
   stat: string;

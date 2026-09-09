@@ -2,11 +2,18 @@ import { useEffect } from "react";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { setScroll } from "./scrollStore";
+import { measureStages, scrollStore, setScroll } from "./scrollStore";
 
 gsap.registerPlugin(ScrollTrigger);
 
 let lenis: Lenis | null = null;
+
+/** Freeze the page behind an overlay — Lenis owns scrolling, so it must stop. */
+export function setScrollLocked(locked: boolean) {
+  if (!lenis) return;
+  if (locked) lenis.stop();
+  else lenis.start();
+}
 
 export function scrollToId(id: string) {
   const el = document.getElementById(id);
@@ -34,7 +41,11 @@ export function useSmoothScroll(enabled = true) {
 
     // one frame, one source of truth: Lenis pushes straight into ScrollTrigger
     lenis.on("scroll", ScrollTrigger.update);
-    if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__lenis = lenis;
+    if (import.meta.env.DEV) {
+      const w = window as unknown as Record<string, unknown>;
+      w.__lenis = lenis;
+      w.__scrollStore = scrollStore;
+    }
 
     const tick = (time: number) => lenis?.raf(time * 1000);
     gsap.ticker.add(tick);
@@ -51,14 +62,16 @@ export function useSmoothScroll(enabled = true) {
         const y = window.scrollY;
         vel = vel * 0.8 + ((y - lastY) / window.innerHeight) * 0.2;
         lastY = y;
-        setScroll(self.progress, vel);
+        setScroll(self.progress, vel, y);
       },
     });
 
     const remeasure = () => {
       lenis?.resize();
       ScrollTrigger.refresh();
+      measureStages();
     };
+    measureStages();
     window.addEventListener("resize", remeasure);
     document.fonts?.ready.then(remeasure);
     // Fonts, lazy images and the WebGL canvas all settle at different moments and

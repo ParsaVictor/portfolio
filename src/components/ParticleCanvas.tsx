@@ -60,6 +60,7 @@ export default function ParticleCanvas({ active }: { active: boolean }) {
           s.playIntro();
         }
         s.setScrollProgress(scrollStore.progress);
+        s.setStage(scrollStore.stage);
         s.update(dt);
       };
       raf = requestAnimationFrame(loop);

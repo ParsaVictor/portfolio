@@ -44,6 +44,9 @@ export class ParticleSystem {
 
   private progress = 0;
   private targetProgress = 0;
+  private stage = 0;
+  private targetStage = 0;
+  private pointerView = new THREE.Vector2();
   private intro = 0;
   private introTarget = 0;
   private pointer = new THREE.Vector2(0, 0);
@@ -83,7 +86,7 @@ export class ParticleSystem {
       : Math.round(clamp((w * h) / (opts.mobile ? 900 : 420), 2400, opts.mobile ? 3600 : 7000));
     this.lineSeg = this.reduced ? 260 : opts.mobile ? 420 : 900;
 
-    this.mouseForce = this.reduced ? 0 : opts.mobile ? 0.09 : 0.19;
+    this.mouseForce = this.reduced ? 0 : opts.mobile ? 0.25 : 0.9;
 
     this.forms = buildForms(this.count, this.lineSeg);
 
@@ -138,6 +141,7 @@ export class ParticleSystem {
         uSpread: { value: 0 },
         uMouseForce: { value: this.mouseForce },
         uPointer: { value: new THREE.Vector2() },
+        uPointerR: { value: 2.0 },
         uColorFrom: { value: this.colors[0].clone() },
         uColorTo: { value: this.colors[1].clone() },
         uOpacity: { value: STAGE_OPACITY[0] },
@@ -203,6 +207,15 @@ export class ParticleSystem {
     this.targetProgress = clamp(p, 0, 1);
   }
 
+  /**
+   * Which chapter the page is showing. Integer while a chapter holds the
+   * screen, fractional only across a handover — so the form sits still and
+   * legible while you read, and only comes apart between chapters.
+   */
+  setStage(s: number) {
+    this.targetStage = clamp(s, 0, STAGE_COUNT - 1);
+  }
+
   setPointer(nx: number, ny: number) {
     this.pointerTarget.set(nx, -ny);
   }
@@ -221,7 +234,7 @@ export class ParticleSystem {
   /* ----------------------------------------------------------------- frame */
 
   private applyStage() {
-    const f = this.progress * (STAGE_COUNT - 1);
+    const f = this.stage;
     let seg = Math.floor(f);
     if (seg > STAGE_COUNT - 2) seg = STAGE_COUNT - 2;
     if (seg < 0) seg = 0;
@@ -244,11 +257,12 @@ export class ParticleSystem {
       lt.needsUpdate = true;
     }
 
-    // Scatter hardest at the seam between two stages, gather at each stage centre —
-    // that is what makes the page read as discrete rooms rather than one long scroll.
-    this.spread = this.reduced ? 0 : Math.pow(Math.sin(frac * Math.PI), 0.75);
+    // `frac` is zero for the whole time a chapter owns the screen and only sweeps
+    // 0→1 across a handover, so the swarm blows apart *between* rooms and is
+    // settled and readable inside them.
+    this.spread = this.reduced ? 0 : Math.pow(Math.sin(clamp(frac, 0, 1) * Math.PI), 0.8);
 
-    const mix = smoothstep(frac);
+    const mix = smoothstep(clamp((frac - 0.08) / 0.84, 0, 1));
     const cFrom = this.colors[seg];
     const cTo = this.colors[seg + 1];
 
@@ -280,6 +294,7 @@ export class ParticleSystem {
     if (!this.reduced) this.time += dt;
 
     this.progress += (this.targetProgress - this.progress) * clamp(dt / 260, 0, 1);
+    this.stage += (this.targetStage - this.stage) * clamp(dt / 220, 0, 1);
     this.intro += (this.introTarget - this.intro) * clamp(dt / 620, 0, 1);
     this.pointer.lerp(this.pointerTarget, clamp(dt / 200, 0, 1));
 
@@ -294,9 +309,16 @@ export class ParticleSystem {
 
     this.applyStage();
 
+    // Project the cursor into view space at the swarm's depth, so the bubble
+    // actually sits under the pointer instead of drifting with aspect ratio.
+    const halfH = Math.abs(this.camZ) * Math.tan((this.camera.fov * Math.PI) / 360);
+    const halfW = halfH * this.camera.aspect;
+    this.pointerView.set(this.pointer.x * halfW, this.pointer.y * halfH);
+
     this.pMat.uniforms.uTime.value = this.time;
     this.pMat.uniforms.uIntro.value = this.intro;
-    this.pMat.uniforms.uPointer.value.copy(this.pointer);
+    this.pMat.uniforms.uPointer.value.copy(this.pointerView);
+    this.pMat.uniforms.uPointerR.value = halfH * 0.42;
     this.lMat.uniforms.uTime.value = this.time;
     this.lMat.uniforms.uIntro.value = this.intro;
 
@@ -317,6 +339,7 @@ export class ParticleSystem {
     return {
       intro: this.intro,
       progress: this.progress,
+      stage: this.stage,
       spread: this.spread,
       camZ: this.camZ,
       breathe: this.pMat.uniforms.uBreathe.value,

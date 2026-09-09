@@ -144,6 +144,11 @@ export const dict = {
     },
     project: {
       view: "View on GitHub",
+      open: "Open project",
+      github: "GitHub",
+      website: "Project site",
+      websiteSoon: "Site coming soon",
+      close: "Close",
       stars: "stars",
     },
     contact: {
@@ -302,6 +307,11 @@ export const dict = {
     },
     project: {
       view: "دیدن در گیت‌هاب",
+      open: "بازکردن پروژه",
+      github: "گیت‌هاب",
+      website: "وب‌سایت پروژه",
+      websiteSoon: "وب‌سایت به‌زودی",
+      close: "بستن",
       stars: "ستاره",
     },
     contact: {

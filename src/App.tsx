@@ -7,11 +7,13 @@ import SectionRail from "./components/SectionRail";
 import Hero from "./components/Hero";
 import Marquee from "./components/Marquee";
 import ChapterBreak from "./components/ChapterBreak";
+import ChapterVeil from "./components/ChapterVeil";
 import AboutStage from "./components/AboutStage";
 import VisionRail from "./components/VisionRail";
 import DataConsole from "./components/DataConsole";
 import WebStack from "./components/WebStack";
 import Contact from "./components/Contact";
+import ProjectModal from "./components/ProjectModal";
 import Footer from "./components/Footer";
 import { useSmoothScroll } from "./scroll/useSmoothScroll";
 import { useLang } from "./i18n/LangProvider";
@@ -57,6 +59,8 @@ export default function App() {
         <Contact />
       </main>
       <Footer />
+      {!loading && <ChapterVeil />}
+      <ProjectModal />
     </div>
   );
 }

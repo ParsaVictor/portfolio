@@ -8,6 +8,7 @@ import { cvProjects, desc, type Project } from "../data/projects";
 import { STAGE_COLORS } from "../config";
 import { useScrub } from "../scroll/useScrub";
 import { clamp } from "../lib/num";
+import { openProject, shouldOpenInPage } from "../state/projectModal";
 import { digits } from "../lib/num";
 
 const ACCENT = STAGE_COLORS.cv;
@@ -62,7 +63,7 @@ export default function VisionRail() {
         >
           {cvProjects.map((p, i) => (
             <div key={p.id} className="w-[82vw] shrink-0 snap-center sm:w-[60vw]">
-              <VisionCard project={p} index={i} lang={lang} view={t.project.view} />
+              <VisionCard project={p} index={i} lang={lang} view={t.project.open} />
             </div>
           ))}
         </div>
@@ -128,7 +129,7 @@ export default function VisionRail() {
                     className="absolute inset-y-0 left-1/2 w-[min(27vw,430px)] -translate-x-1/2 will-change-transform"
                     style={{ transformStyle: "preserve-3d", transition: "opacity 200ms linear" }}
                   >
-                    <VisionCard project={p} index={i} lang={lang} view={t.project.view} focus />
+                    <VisionCard project={p} index={i} lang={lang} view={t.project.open} focus />
                   </div>
                 ))}
               </div>
@@ -181,7 +182,7 @@ export function StageCopy({
       <Reveal variant="up" duration={850} delay={180}>
         <p
           className={
-            "mt-5 text-[15px] leading-8 text-bone/55 " + (centered ? "mx-auto max-w-2xl" : "max-w-md")
+            "mt-5 text-[16px] leading-8 text-bone/72 " + (centered ? "mx-auto max-w-2xl" : "max-w-md")
           }
         >
           {meta.desc}
@@ -210,7 +211,12 @@ function VisionCard({
       target="_blank"
       rel="noreferrer"
       data-cursor-hover
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-bone/12 bg-ink/85 backdrop-blur-md transition-colors duration-300 hover:border-bone/30"
+      onClick={(e) => {
+        if (!shouldOpenInPage(e)) return;
+        e.preventDefault();
+        openProject(project);
+      }}
+      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-bone/12 bg-ink/85 backdrop-blur-md transition-colors duration-300 hover:border-bone/30"
       style={{ boxShadow: focus ? "0 30px 90px -40px " + project.accent : undefined }}
     >
       {/* the read-out — the image stays at full brightness, only the HUD sits over it */}
@@ -247,12 +253,12 @@ function VisionCard({
 
       <div className="flex flex-1 flex-col p-5 sm:p-6">
         <h3 className="text-lg font-bold text-bone sm:text-xl ltr">{project.title}</h3>
-        <p className="mt-3 flex-1 text-[13.5px] leading-7 text-bone/60">{desc(project, lang)}</p>
+        <p className="mt-3 flex-1 text-[14.5px] leading-7 text-bone/74">{desc(project, lang)}</p>
         <div className="mt-4 flex flex-wrap gap-1.5">
           {project.tags.map((tag) => (
             <span
               key={tag}
-              className="rounded-full border border-bone/10 px-2.5 py-1 font-mono text-[10px] text-bone/55 ltr"
+              className="rounded-full border border-bone/10 px-2.5 py-1 font-mono text-[10px] text-bone/72 ltr"
             >
               {tag}
             </span>

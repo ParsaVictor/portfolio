@@ -193,7 +193,7 @@ export default function Timeline({
             <h3 className="mt-2 text-lg font-bold leading-tight text-bone sm:text-xl">
               {m.title}
             </h3>
-            <p className="mt-2 text-[13px] leading-6 text-bone/55 sm:text-[13.5px]">{m.body}</p>
+            <p className="mt-2 text-[14px] leading-7 text-bone/72 sm:text-[14.5px]">{m.body}</p>
           </div>
         );
       })}

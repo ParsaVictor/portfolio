@@ -15,6 +15,7 @@ uniform float uPixelRatio;
 uniform float uBreathe;
 uniform float uSpread;      // 0 at rest, 1 mid-transition — the cloud flies apart
 uniform float uMouseForce;
+uniform float uPointerR;
 uniform vec2  uPointer;
 uniform vec3  uColorFrom;
 uniform vec3  uColorTo;
@@ -67,15 +68,21 @@ void main() {
 
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
 
-  // ── cursor field ────────────────────────────────────────────────────
-  // A soft magnetic well that follows the pointer: points lean toward it and
-  // brighten as they get close, so moving the mouse visibly stirs the cloud.
-  vec2 toP = uPointer * 2.6 - mv.xy;
-  float d  = length(toP) + 0.001;
-  float pull = smoothstep(2.6, 0.0, d);
-  mv.xy += (toP / d) * pull * uMouseForce;
-  float swirl = pull * uMouseForce * 0.55;
-  mv.xy += vec2(-toP.y, toP.x) / d * swirl;
+  // ── cursor bubble ───────────────────────────────────────────────────
+  // The pointer pushes points outward, opening a rounded cavity in the swarm
+  // that travels with the cursor. uPointer already arrives in view space, so
+  // the bubble sits exactly under the mouse at any aspect ratio.
+  vec2 fromP = mv.xy - uPointer;
+  float d = length(fromP) + 0.0001;
+  float infl = 1.0 - smoothstep(0.0, uPointerR, d);
+  infl = infl * infl;                                   // tight rim, soft falloff
+  vec2 dir = fromP / d;
+  mv.xy += dir * infl * uPointerR * uMouseForce;
+  // lift the displaced points toward the lens so the cavity reads as a dome
+  mv.z += infl * uMouseForce * 0.55;
+  // a little rotation in the rim keeps it alive rather than a dead hole
+  mv.xy += vec2(-dir.y, dir.x) * infl * uMouseForce * 0.22;
+  float pull = infl;
 
   gl_Position = projectionMatrix * mv;
 

@@ -62,7 +62,7 @@ export default function Contact() {
         </Reveal>
 
         <Reveal variant="up" duration={850} delay={180}>
-          <p className="mx-auto mt-6 max-w-xl text-[15px] leading-8 text-bone/55 sm:text-base">
+          <p className="mx-auto mt-6 max-w-xl text-[16px] leading-8 text-bone/72 sm:text-base">
             {t.contact.desc}
           </p>
         </Reveal>
