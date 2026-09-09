@@ -7,7 +7,7 @@ const BRANCHES: Branch[] = [
   { key: "vision", label: "VISION", color: "#35e0ff", leaves: ["YOLO", "OpenCV", "ByteTrack", "MediaPipe"] },
   { key: "deep", label: "DEEP LEARNING", color: "#7cc4ff", leaves: ["PyTorch", "CNN", "Transfer Learning"] },
   { key: "ml", label: "MACHINE LEARNING", color: "#a894ff", leaves: ["scikit-learn", "Random Forest", "Explainable AI"] },
-  { key: "data", label: "DATA", color: "#ffb454", leaves: ["NumPy", "Open3D", "B-Spline"] },
+  { key: "data", label: "DATA", color: "#ffb454", leaves: ["NumPy", "Pandas", "SQL", "Matplotlib"] },
   { key: "web", label: "WEB", color: "#ff6a5e", leaves: ["React", "TypeScript", "Three.js", "Next.js"] },
   { key: "infra", label: "INFRA", color: "#8fd67a", leaves: ["Docker", "Git", "MLOps"] },
 ];
