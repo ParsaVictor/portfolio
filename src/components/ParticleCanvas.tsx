@@ -25,7 +25,16 @@ export default function ParticleCanvas({ active }: { active: boolean }) {
 
     import("../three/ParticleSystem").then(({ ParticleSystem: PS }) => {
       if (disposed) return;
-      const s = new PS({ canvas, colors, reducedMotion: reduced, mobile });
+      let s: ParticleSystem;
+      try {
+        s = new PS({ canvas, colors, reducedMotion: reduced, mobile });
+      } catch (err) {
+        // A GPU/driver hiccup here (context creation failing on a cold
+        // refresh) must not wedge the page — drop the instrument, keep
+        // everything else running.
+        console.error("[ParticleCanvas] failed to init WebGL, skipping instrument:", err);
+        return;
+      }
       sys = s;
       s.resize(window.innerWidth, window.innerHeight);
       if (import.meta.env.DEV) {
@@ -71,10 +80,17 @@ export default function ParticleCanvas({ active }: { active: boolean }) {
           started = true;
           s.playIntro();
         }
-        s.setScrollProgress(scrollStore.progress);
-        s.setStage(scrollStore.stage);
-        s.setQuiet(stepQuiet(dt));
-        s.update(dt);
+        try {
+          s.setScrollProgress(scrollStore.progress);
+          s.setStage(scrollStore.stage);
+          s.setQuiet(stepQuiet(dt));
+          s.update(dt);
+        } catch (err) {
+          // Never let a single bad frame kill the rAF loop silently — the
+          // canvas would freeze on its last frame while the rest of the
+          // page reads as "hung".
+          console.error("[ParticleCanvas] frame error:", err);
+        }
       };
       raf = requestAnimationFrame(loop);
     });

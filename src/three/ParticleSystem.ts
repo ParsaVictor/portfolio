@@ -344,7 +344,12 @@ export class ParticleSystem {
 
     // slow autonomous rotation + a scroll-driven quarter turn: it reads as one object
     if (!this.reduced) this.spin += dt * 0.000055;
-    this.group.rotation.y = this.spin + this.progress * Math.PI * 0.85 + this.pointer.x * 0.18;
+    // the contact chapter reads as "@" — calm the spin there so the glyph stays legible
+    // instead of tumbling; every earlier chapter keeps its full rotation untouched.
+    const contactCalm = smoothstep(clamp((this.stage - (STAGE_COUNT - 1) + 0.7) / 0.7, 0, 1));
+    const spinAmount = this.spin * lerp(1, 0.5, contactCalm);
+    const scrollTurn = this.progress * Math.PI * 0.85 * lerp(1, 0.55, contactCalm);
+    this.group.rotation.y = spinAmount + scrollTurn + this.pointer.x * 0.18;
     this.group.rotation.x = Math.sin(this.time * 0.00013) * 0.1 - this.pointer.y * 0.12;
 
     const ease = clamp(dt / 700, 0, 1);
