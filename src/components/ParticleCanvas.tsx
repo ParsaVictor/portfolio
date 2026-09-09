@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { STAGE_COLORS, STAGES } from "../config";
 import { scrollStore } from "../scroll/scrollStore";
+import { quietZone, stepQuiet } from "../state/quietZone";
 import type { ParticleSystem } from "../three/ParticleSystem";
 
 export default function ParticleCanvas({ active }: { active: boolean }) {
@@ -27,7 +28,11 @@ export default function ParticleCanvas({ active }: { active: boolean }) {
       const s = new PS({ canvas, colors, reducedMotion: reduced, mobile });
       sys = s;
       s.resize(window.innerWidth, window.innerHeight);
-      if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__mpk = s;
+      if (import.meta.env.DEV) {
+        const w = window as unknown as Record<string, unknown>;
+        w.__mpk = s;
+        w.__quiet = quietZone;
+      }
       // Paint one frame immediately: a background tab (or any context where rAF
       // is parked) should still show the form rather than an empty canvas.
       s.update(16);
@@ -61,6 +66,7 @@ export default function ParticleCanvas({ active }: { active: boolean }) {
         }
         s.setScrollProgress(scrollStore.progress);
         s.setStage(scrollStore.stage);
+        s.setQuiet(stepQuiet(dt));
         s.update(dt);
       };
       raf = requestAnimationFrame(loop);

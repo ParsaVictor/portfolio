@@ -4,36 +4,11 @@ type Branch = { key: string; label: string; color: string; leaves: string[] };
 
 /** Grounded in what the repos actually use — no aspirational entries. */
 const BRANCHES: Branch[] = [
-  {
-    key: "vision",
-    label: "VISION",
-    color: "#35e0ff",
-    leaves: ["YOLO", "OpenCV", "ByteTrack", "MediaPipe"],
-  },
-  {
-    key: "learning",
-    label: "LEARNING",
-    color: "#a894ff",
-    leaves: ["PyTorch", "scikit-learn", "Random Forest"],
-  },
-  {
-    key: "data",
-    label: "DATA",
-    color: "#ffb454",
-    leaves: ["NumPy", "Open3D", "B-Spline"],
-  },
-  {
-    key: "web",
-    label: "WEB",
-    color: "#ff6a5e",
-    leaves: ["React", "TypeScript", "Three.js", "Next.js"],
-  },
-  {
-    key: "infra",
-    label: "INFRA",
-    color: "#8fd67a",
-    leaves: ["Docker", "Git", "CI"],
-  },
+  { key: "vision", label: "VISION", color: "#35e0ff", leaves: ["YOLO", "OpenCV", "ByteTrack", "MediaPipe"] },
+  { key: "learning", label: "LEARNING", color: "#a894ff", leaves: ["PyTorch", "scikit-learn", "Random Forest"] },
+  { key: "data", label: "DATA", color: "#ffb454", leaves: ["NumPy", "Open3D", "B-Spline"] },
+  { key: "web", label: "WEB", color: "#ff6a5e", leaves: ["React", "TypeScript", "Three.js", "Next.js"] },
+  { key: "infra", label: "INFRA", color: "#8fd67a", leaves: ["Docker", "Git", "CI"] },
 ];
 
 type Node = {
@@ -48,15 +23,22 @@ type Node = {
   seed: number;
 };
 
+/** A mote riding one edge of the graph. */
+type Mote = { edge: number; t: number; speed: number; size: number };
+
+const MOTES_PER_EDGE = 3;
+
 /**
- * The stack as a graph rather than a list of pills.
+ * The stack as a living graph.
  *
- * Layout is computed from the measured box (a radial tree: hub → discipline →
- * tool), links and nodes are painted to canvas, and the labels are real DOM
- * text positioned over it — so they stay selectable, searchable and legible at
- * any pixel ratio instead of being baked into the bitmap.
+ * Layout is a radial tree (hub → discipline → tool) computed from the measured
+ * box. Links, nodes and a field of motes that ride the links are painted to
+ * canvas; the labels stay real DOM text over the top, so they remain selectable
+ * and sharp at any pixel ratio instead of being baked into the bitmap.
  *
- * Bringing the cursor near a node traces its path back to the centre.
+ * The whole graph floats — every node drifts on its own seeded phase and the
+ * cloud leans toward the pointer. Bringing the cursor near a node traces its
+ * path to the centre and the motes on that path surge.
  */
 export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -64,10 +46,14 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [nodes, setNodes] = useState<Node[]>([]);
   const [active, setActive] = useState<number | null>(null);
-  const pointer = useRef({ x: -9999, y: -9999 });
+
   const activeRef = useRef<number | null>(null);
   activeRef.current = active;
+  const lean = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
+  const motes = useRef<Mote[]>([]);
+  const lastT = useRef(0);
 
+  /* --------------------------------------------------------- measure */
   useLayoutEffect(() => {
     const el = boxRef.current;
     if (!el) return;
@@ -96,55 +82,59 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
     const cx = w / 2;
     const cy = h / 2;
     const m = Math.min(w, h);
-    const rBranch = m * 0.29;
-    const rLeaf = m * 0.2;
+    const wide = w / h;
+    const rBranch = m * 0.3;
+    const rLeaf = m * 0.21;
 
     const next: Node[] = [
-      { id: "hub", label: hub, x: cx, y: cy, r: 9, color: "#f2ece1", kind: "hub", parent: null, seed: 0 },
+      { id: "hub", label: hub, x: cx, y: cy, r: 10, color: "#f2ece1", kind: "hub", parent: null, seed: 0 },
     ];
 
     BRANCHES.forEach((b, bi) => {
-      // start at the top and go round; the tree reads clockwise from 12 o'clock
       const a = -Math.PI / 2 + (bi / BRANCHES.length) * Math.PI * 2;
-      const bx = cx + Math.cos(a) * rBranch * (w > h ? 1.35 : 1);
+      const bx = cx + Math.cos(a) * rBranch * Math.min(wide, 1.5);
       const by = cy + Math.sin(a) * rBranch;
       const bIndex = next.length;
       next.push({
-        id: b.key,
-        label: b.label,
-        x: bx,
-        y: by,
-        r: 5.5,
-        color: b.color,
-        kind: "branch",
-        parent: 0,
-        seed: bi * 1.7,
+        id: b.key, label: b.label, x: bx, y: by, r: 6,
+        color: b.color, kind: "branch", parent: 0, seed: bi * 1.7,
       });
 
-      const spread = Math.PI * 0.78;
+      const spread = Math.PI * 0.8;
       b.leaves.forEach((leaf, li) => {
         const t = b.leaves.length === 1 ? 0.5 : li / (b.leaves.length - 1);
         const la = a + (t - 0.5) * spread;
         next.push({
-          id: b.key + "-" + leaf,
-          label: leaf,
-          x: bx + Math.cos(la) * rLeaf * (w > h ? 1.3 : 1),
+          id: b.key + "-" + leaf, label: leaf,
+          x: bx + Math.cos(la) * rLeaf * Math.min(wide, 1.45),
           y: by + Math.sin(la) * rLeaf,
-          r: 3,
-          color: b.color,
-          kind: "leaf",
-          parent: bIndex,
+          r: 3.2, color: b.color, kind: "leaf", parent: bIndex,
           seed: bi * 3.1 + li * 0.9,
         });
       });
     });
 
     setNodes(next);
+
+    // one mote set per edge; edges are every node with a parent
+    const edges = next.map((n, i) => (n.parent == null ? -1 : i)).filter((i) => i >= 0);
+    const list: Mote[] = [];
+    edges.forEach((e) => {
+      for (let k = 0; k < MOTES_PER_EDGE; k++) {
+        list.push({
+          edge: e,
+          t: (k / MOTES_PER_EDGE + Math.random() * 0.2) % 1,
+          speed: 0.045 + Math.random() * 0.05,
+          size: 0.9 + Math.random() * 1.1,
+        });
+      }
+    });
+    motes.current = list;
   }, [size, hub]);
 
   /* ------------------------------------------------------------ paint */
   const draw = useCallback(
-    (time: number) => {
+    (time: number, dt: number) => {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
       if (!canvas || !ctx || !nodes.length) return;
@@ -158,11 +148,17 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
 
-      // a node's live position: its layout spot plus a slow, seeded drift
-      const px = (n: Node) => n.x + Math.sin(time * 0.00035 + n.seed) * (n.kind === "hub" ? 0 : 4);
-      const py = (n: Node) => n.y + Math.cos(time * 0.0004 + n.seed * 1.3) * (n.kind === "hub" ? 0 : 4);
+      // ease the lean so the graph glides rather than snaps
+      lean.current.x += (lean.current.tx - lean.current.x) * Math.min(1, dt / 260);
+      lean.current.y += (lean.current.ty - lean.current.y) * Math.min(1, dt / 260);
 
-      // which nodes are on the traced path back to the hub
+      // live position: layout spot + seeded float + a lean toward the pointer
+      const depth = (n: Node) => (n.kind === "hub" ? 0.35 : n.kind === "branch" ? 0.7 : 1);
+      const px = (n: Node) =>
+        n.x + Math.sin(time * 0.00034 + n.seed) * 5 * depth(n) + lean.current.x * 16 * depth(n);
+      const py = (n: Node) =>
+        n.y + Math.cos(time * 0.00041 + n.seed * 1.3) * 5 * depth(n) + lean.current.y * 12 * depth(n);
+
       const lit = new Set<number>();
       const a = activeRef.current;
       if (a != null) {
@@ -173,7 +169,7 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
         }
       }
 
-      // links first, so nodes sit on top of them
+      /* links */
       nodes.forEach((n, i) => {
         if (n.parent == null) return;
         const p = nodes[n.parent];
@@ -181,46 +177,72 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
         ctx.beginPath();
         ctx.moveTo(px(p), py(p));
         ctx.lineTo(px(n), py(n));
-        ctx.strokeStyle = on ? n.color : "rgba(242,236,225,0.13)";
-        ctx.lineWidth = on ? 1.6 : 1;
+        ctx.strokeStyle = on ? n.color : "rgba(242,236,225,0.10)";
+        ctx.lineWidth = on ? 1.5 : 0.9;
         ctx.stroke();
-
-        // a spark running the traced link
-        if (on) {
-          const t = ((time * 0.0006 + i * 0.2) % 1);
-          const sx = px(p) + (px(n) - px(p)) * t;
-          const sy = py(p) + (py(n) - py(p)) * t;
-          ctx.beginPath();
-          ctx.arc(sx, sy, 2, 0, Math.PI * 2);
-          ctx.fillStyle = "#fff";
-          ctx.fill();
-        }
       });
 
+      /* motes riding the links — the graph's own weather */
+      ctx.globalCompositeOperation = "lighter";
+      for (const mo of motes.current) {
+        const n = nodes[mo.edge];
+        if (!n || n.parent == null) continue;
+        const p = nodes[n.parent];
+        const on = lit.has(mo.edge) && lit.has(n.parent);
+        mo.t += (mo.speed * (on ? 3.2 : 1) * dt) / 1000;
+        if (mo.t > 1) mo.t -= 1;
+
+        const x = px(p) + (px(n) - px(p)) * mo.t;
+        const y = py(p) + (py(n) - py(p)) * mo.t;
+        // fade in and out at the ends so they appear to enter and leave the wire
+        const fade = Math.sin(mo.t * Math.PI);
+        const r = mo.size * (on ? 2.1 : 1.25);
+
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = on ? "#ffffff" : n.color;
+        ctx.globalAlpha = (on ? 0.95 : 0.5) * fade;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(x, y, r * 3, 0, Math.PI * 2);
+        ctx.fillStyle = n.color;
+        ctx.globalAlpha = (on ? 0.22 : 0.09) * fade;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+
+      /* nodes */
       nodes.forEach((n, i) => {
         const on = lit.has(i);
         const x = px(n);
         const y = py(n);
+
         if (n.kind === "hub") {
-          ctx.beginPath();
-          ctx.arc(x, y, n.r + 8 + Math.sin(time * 0.0012) * 2, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(242,236,225,0.22)";
-          ctx.lineWidth = 1;
-          ctx.stroke();
+          for (let k = 0; k < 2; k++) {
+            const pulse = ((time * 0.00022 + k * 0.5) % 1);
+            ctx.beginPath();
+            ctx.arc(x, y, n.r + 6 + pulse * 46, 0, Math.PI * 2);
+            ctx.strokeStyle = "rgba(242,236,225," + (0.18 * (1 - pulse)).toFixed(3) + ")";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
         }
-        ctx.beginPath();
-        ctx.arc(x, y, n.r * (on ? 1.45 : 1), 0, Math.PI * 2);
-        ctx.fillStyle = on ? n.color : n.kind === "leaf" ? "rgba(242,236,225,0.4)" : n.color;
-        ctx.globalAlpha = on ? 1 : n.kind === "leaf" ? 0.75 : 0.85;
-        ctx.fill();
-        ctx.globalAlpha = 1;
+
         if (on) {
           ctx.beginPath();
-          ctx.arc(x, y, n.r * 2.6, 0, Math.PI * 2);
-          ctx.strokeStyle = n.color + "66";
-          ctx.lineWidth = 1;
-          ctx.stroke();
+          ctx.arc(x, y, n.r * 3.4, 0, Math.PI * 2);
+          ctx.fillStyle = n.color + "1f";
+          ctx.fill();
         }
+
+        ctx.beginPath();
+        ctx.arc(x, y, n.r * (on ? 1.4 : 1), 0, Math.PI * 2);
+        ctx.fillStyle = on ? n.color : n.kind === "leaf" ? "rgba(242,236,225,0.45)" : n.color;
+        ctx.globalAlpha = on ? 1 : n.kind === "leaf" ? 0.8 : 0.9;
+        ctx.fill();
+        ctx.globalAlpha = 1;
       });
     },
     [nodes, size]
@@ -228,13 +250,15 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
 
   useEffect(() => {
     if (!nodes.length) return;
-    draw(0);
+    draw(0, 16);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let raf = 0;
     const loop = (t: number) => {
       raf = requestAnimationFrame(loop);
       if (document.hidden) return;
-      draw(t);
+      const dt = lastT.current ? Math.min(50, t - lastT.current) : 16;
+      lastT.current = t;
+      draw(t, dt);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
@@ -246,12 +270,16 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
     if (!el || !nodes.length) return;
     const onMove = (e: PointerEvent) => {
       const r = el.getBoundingClientRect();
-      pointer.current = { x: e.clientX - r.left, y: e.clientY - r.top };
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      lean.current.tx = (x / r.width - 0.5) * 2;
+      lean.current.ty = (y / r.height - 0.5) * 2;
+
       let best: number | null = null;
-      let bestD = 92; // only trace when the cursor is genuinely near something
+      let bestD = 96;
       nodes.forEach((n, i) => {
         if (n.kind === "hub") return;
-        const d = Math.hypot(n.x - pointer.current.x, n.y - pointer.current.y);
+        const d = Math.hypot(n.x - x, n.y - y);
         if (d < bestD) {
           bestD = d;
           best = i;
@@ -259,7 +287,11 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
       });
       setActive(best);
     };
-    const onLeave = () => setActive(null);
+    const onLeave = () => {
+      setActive(null);
+      lean.current.tx = 0;
+      lean.current.ty = 0;
+    };
     el.addEventListener("pointermove", onMove);
     el.addEventListener("pointerleave", onLeave);
     return () => {
@@ -273,21 +305,24 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
   return (
     <div
       ref={boxRef}
-      className="relative w-full overflow-hidden rounded-3xl border border-bone/[0.07] bg-bone/[0.018]"
-      style={{ height: "clamp(420px, 58vh, 620px)" }}
+      className="relative w-full overflow-hidden rounded-3xl"
+      style={{ height: "clamp(460px, 72vh, 760px)" }}
     >
-      <div className="grid-bg pointer-events-none absolute inset-0 opacity-40" />
-      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" style={{ width: size.w, height: size.h }} aria-hidden />
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 h-full w-full"
+        style={{ width: size.w, height: size.h }}
+        aria-hidden
+      />
 
-      {/* real text, positioned over the canvas */}
       {nodes.map((n, i) => {
         const on = active != null && (i === active || nodes[active]?.parent === i);
         if (n.kind === "hub") {
           return (
             <span
               key={n.id}
-              className="pointer-events-none absolute -translate-x-1/2 font-mono text-[10px] font-bold tracking-[0.3em] text-bone ltr"
-              style={{ left: n.x, top: n.y + 20 }}
+              className="pointer-events-none absolute -translate-x-1/2 font-mono text-[10px] font-bold tracking-[0.34em] text-bone ltr"
+              style={{ left: n.x, top: n.y + 22 }}
             >
               {n.label}
             </span>
@@ -299,11 +334,12 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
             className="pointer-events-none absolute -translate-x-1/2 whitespace-nowrap font-mono transition-colors duration-200 ltr"
             style={{
               left: n.x,
-              top: n.y + (n.kind === "branch" ? 12 : 9),
+              top: n.y + (n.kind === "branch" ? 13 : 10),
               fontSize: n.kind === "branch" ? 10 : 10.5,
-              letterSpacing: n.kind === "branch" ? "0.26em" : "0.02em",
+              letterSpacing: n.kind === "branch" ? "0.28em" : "0.02em",
               fontWeight: n.kind === "branch" ? 700 : 400,
-              color: on ? n.color : n.kind === "branch" ? "rgba(242,236,225,0.8)" : "rgba(242,236,225,0.5)",
+              color: on ? n.color : n.kind === "branch" ? "rgba(242,236,225,0.82)" : "rgba(242,236,225,0.52)",
+              textShadow: "0 1px 10px rgba(10,9,8,0.9)",
             }}
           >
             {n.label}
@@ -311,8 +347,10 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
         );
       })}
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between px-5 py-4 font-mono text-[9px] uppercase tracking-[0.26em] text-dim ltr">
-        <span>{activeNode ? "traced · " + activeNode.label : "move the cursor near a node to trace"}</span>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between px-2 pb-1 font-mono text-[9px] uppercase tracking-[0.28em] text-dim ltr">
+        <span style={activeNode ? { color: activeNode.color } : undefined}>
+          {activeNode ? "traced · " + activeNode.label : "move the cursor near a node to trace"}
+        </span>
         <span>{nodes.length} nodes</span>
       </div>
     </div>

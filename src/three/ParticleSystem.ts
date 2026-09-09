@@ -53,6 +53,7 @@ export class ParticleSystem {
   private pointerTarget = new THREE.Vector2(0, 0);
   private camZ = 18;
   private spread = 0;
+  private quiet = 0;
   private mouseForce = 0;
   private offsetX = 0;
   private offsetY = 0;
@@ -216,6 +217,11 @@ export class ParticleSystem {
     this.targetStage = clamp(s, 0, STAGE_COUNT - 1);
   }
 
+  /** 0 = full presence, 1 = stand right down and let a section have the room. */
+  setQuiet(v: number) {
+    this.quiet = clamp(v, 0, 1);
+  }
+
   setPointer(nx: number, ny: number) {
     this.pointerTarget.set(nx, -ny);
   }
@@ -270,7 +276,8 @@ export class ParticleSystem {
     pu.uMix.value = mix;
     pu.uColorFrom.value.copy(cFrom);
     pu.uColorTo.value.copy(cTo);
-    pu.uOpacity.value = lerp(STAGE_OPACITY[seg], STAGE_OPACITY[seg + 1], mix);
+    const hush = 1 - this.quiet * 0.94;
+    pu.uOpacity.value = lerp(STAGE_OPACITY[seg], STAGE_OPACITY[seg + 1], mix) * hush;
     pu.uBreathe.value = lerp(STAGE_BREATHE[seg], STAGE_BREATHE[seg + 1], mix);
     pu.uSpread.value = this.spread;
 
@@ -278,7 +285,7 @@ export class ParticleSystem {
     lu.uMix.value = mix;
     lu.uColorFrom.value.copy(cFrom);
     lu.uColorTo.value.copy(cTo);
-    lu.uOpacity.value = lerp(STAGE_LINE_OPACITY[seg], STAGE_LINE_OPACITY[seg + 1], mix);
+    lu.uOpacity.value = lerp(STAGE_LINE_OPACITY[seg], STAGE_LINE_OPACITY[seg + 1], mix) * hush;
     lu.uBreathe.value = pu.uBreathe.value;
     lu.uSpread.value = this.spread;
 
@@ -341,6 +348,7 @@ export class ParticleSystem {
       progress: this.progress,
       stage: this.stage,
       spread: this.spread,
+      quiet: this.quiet,
       camZ: this.camZ,
       breathe: this.pMat.uniforms.uBreathe.value,
       opacity: this.pMat.uniforms.uOpacity.value,

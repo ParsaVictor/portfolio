@@ -79,6 +79,7 @@ export const dict = {
         status: "Open to work",
         open: "open-source repos",
       },
+      stackNote: "Five disciplines, one graph. Trace any tool back to the centre and you get the shape of how I actually work.",
       methodKicker: "METHOD",
       methodTitle: "How a model actually gets from a paper to somebody's screen.",
       method: [
@@ -242,6 +243,7 @@ export const dict = {
         status: "آماده‌ی همکاری",
         open: "مخزن متن‌باز",
       },
+      stackNote: "پنج حوزه، یک گراف. هر ابزاری را تا مرکز دنبال کن، شکلِ واقعیِ کارکردنِ من درمی‌آید.",
       methodKicker: "روشِ کار",
       methodTitle: "یک مدل واقعاً چطور از مقاله به صفحه‌ی نمایشِ یک آدم می‌رسد.",
       method: [
