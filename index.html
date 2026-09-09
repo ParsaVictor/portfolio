@@ -30,6 +30,18 @@
     <title>Mohammad Parsa Karkooti — AI Engineer</title>
   </head>
   <body>
+    <!-- Must run before the browser gets a chance to restore a mid-page
+         scroll position on refresh, and before the module script below
+         (which is deferred) — a plain inline script parses synchronously
+         right here. Otherwise the intro (preloader + particle bloom) plays
+         over whatever section the visitor had scrolled to, since the
+         browser silently jumped back there first. -->
+    <script>
+      try {
+        if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+        window.scrollTo(0, 0);
+      } catch (e) {}
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

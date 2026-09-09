@@ -145,8 +145,8 @@ export default function Timeline({
       // the physical scroll — the old "top 78% / bottom 62%" window was
       // short enough that the tip visibly raced ahead of where you'd
       // actually scrolled to.
-      start: "top bottom",
-      end: "bottom top",
+      start: "top 90%",
+      end: "bottom 10%",
       onUpdate: (self) => paint(self.progress),
       onRefresh: (self) => paint(self.progress),
     });
