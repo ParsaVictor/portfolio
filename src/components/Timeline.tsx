@@ -140,13 +140,10 @@ export default function Timeline({
 
     const st = ScrollTrigger.create({
       trigger: wrap,
-      // span the connector's full pass through the viewport (enter at the
-      // bottom, finish as it exits the top) so the draw can never outrun
-      // the physical scroll — the old "top 78% / bottom 62%" window was
-      // short enough that the tip visibly raced ahead of where you'd
-      // actually scrolled to.
-      start: "top 90%",
-      end: "bottom 10%",
+      // halfway between the original window (78%/62% — raced ahead of the
+      // scroll) and the corrected one (90%/10% — dragged behind it).
+      start: "top 84%",
+      end: "bottom 36%",
       onUpdate: (self) => paint(self.progress),
       onRefresh: (self) => paint(self.progress),
     });
