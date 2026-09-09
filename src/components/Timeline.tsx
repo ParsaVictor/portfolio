@@ -37,6 +37,18 @@ export default function Timeline({
 
   const [w, setW] = useState(0);
   const [narrow, setNarrow] = useState(true);
+  const [rtl, setRtl] = useState(false);
+
+  // The cards flip on their own because they are placed with logical insets;
+  // the SVG underneath is drawn in physical pixels, so it has to be mirrored by
+  // hand or the connector ends up on the wrong side of them in Persian.
+  useEffect(() => {
+    const read = () => setRtl(document.documentElement.dir === "rtl");
+    read();
+    const mo = new MutationObserver(read);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["dir"] });
+    return () => mo.disconnect();
+  }, []);
 
   // Measure — the geometry is derived, never hardcoded. Belt and braces on the
   // read, because a mount that happens before layout settles (fonts, a hidden
@@ -65,7 +77,8 @@ export default function Timeline({
   const height = items.length * rowH;
   const leftX = narrow ? 22 : w * 0.5 - w * 0.24;
   const rightX = narrow ? 22 : w * 0.5 + w * 0.24;
-  const nodeX = (i: number) => (narrow ? leftX : i % 2 === 0 ? leftX : rightX);
+  const rawX = (i: number) => (narrow ? leftX : i % 2 === 0 ? leftX : rightX);
+  const nodeX = (i: number) => (rtl ? w - rawX(i) : rawX(i));
   const nodeY = (i: number) => (i + 0.5) * rowH;
 
   let d = "";
@@ -134,7 +147,7 @@ export default function Timeline({
     });
     ScrollTrigger.refresh();
     return () => st.kill();
-  }, [w, narrow, items.length, colors]);
+  }, [w, narrow, rtl, items.length, colors]);
 
   return (
     <div ref={wrapRef} className="relative" style={{ height: height + "px" }}>
@@ -146,7 +159,7 @@ export default function Timeline({
         aria-hidden
       >
         {/* the ghost route, so the shape reads before it is drawn */}
-        <path d={d} fill="none" stroke="rgba(242,236,225,0.10)" strokeWidth="1.5" />
+        <path d={d} fill="none" stroke="rgba(242,236,225,0.13)" strokeWidth="2.4" />
         <defs>
           <linearGradient id="mpk-method" x1="0" y1="0" x2="0" y2="1">
             {items.map((_, i) => (
@@ -163,9 +176,9 @@ export default function Timeline({
           d={d}
           fill="none"
           stroke="url(#mpk-method)"
-          strokeWidth="2.2"
+          strokeWidth="3.4"
           strokeLinecap="round"
-          style={{ filter: "drop-shadow(0 0 9px " + accent + "66)" }}
+          style={{ filter: "drop-shadow(0 0 14px " + accent + "88)" }}
         />
         {items.map((_, i) => (
           <g key={i}>
@@ -193,7 +206,7 @@ export default function Timeline({
         ))}
         <circle
           ref={tipRef}
-          r={4}
+          r={5}
           fill="#fff"
           style={{ opacity: 0, filter: "drop-shadow(0 0 10px " + accent + ")" }}
         />
@@ -210,8 +223,8 @@ export default function Timeline({
             className="absolute"
             style={{
               top: nodeY(i) - rowH * 0.4 + "px",
-              left: narrow ? "46px" : onRight ? "50%" : undefined,
-              right: narrow ? "0" : onRight ? undefined : "50%",
+              insetInlineStart: narrow ? "46px" : onRight ? "50%" : undefined,
+              insetInlineEnd: narrow ? "0" : onRight ? undefined : "50%",
               width: narrow ? "auto" : "42%",
               paddingInlineStart: narrow ? 0 : onRight ? "3rem" : 0,
               paddingInlineEnd: narrow ? 0 : onRight ? 0 : "3rem",

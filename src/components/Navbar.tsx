@@ -51,7 +51,7 @@ export default function Navbar() {
               key={l.id}
               onClick={() => go(l.id)}
               data-cursor-hover
-              className="relative text-xs tracking-wide text-bone/70 transition-colors hover:text-bone after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0 after:bg-cyanx after:transition-all after:duration-300 hover:after:w-full"
+              className="relative text-xs tracking-wide text-bone/70 transition-colors hover:text-bone after:absolute after:-bottom-1 after:start-0 after:h-px after:w-0 after:bg-cyanx after:transition-all after:duration-300 hover:after:w-full"
             >
               {l.label}
             </button>

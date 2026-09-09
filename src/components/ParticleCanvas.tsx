@@ -38,6 +38,12 @@ export default function ParticleCanvas({ active }: { active: boolean }) {
       s.update(16);
 
       const onResize = () => s.resize(window.innerWidth, window.innerHeight);
+
+      // the swarm has to flip with the page, or it lands under the copy in Persian
+      const readDir = () => s.setRTL(document.documentElement.dir === "rtl");
+      readDir();
+      const dirObserver = new MutationObserver(readDir);
+      dirObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["dir"] });
       const onPointer = (e: PointerEvent) =>
         s.setPointer((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
       const onLeave = () => s.setPointer(0, 0);
@@ -48,6 +54,7 @@ export default function ParticleCanvas({ active }: { active: boolean }) {
       window.addEventListener("pointerdown", onDown, { passive: true });
       document.addEventListener("pointerleave", onLeave);
       cleanupEvents = () => {
+        dirObserver.disconnect();
         window.removeEventListener("resize", onResize);
         window.removeEventListener("pointermove", onPointer);
         window.removeEventListener("pointerdown", onDown);

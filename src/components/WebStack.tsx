@@ -172,7 +172,7 @@ function BrowserCard({
           </div>
         )}
         <span
-          className="absolute bottom-3 left-3 rounded-md px-2 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
+          className="absolute bottom-3 start-3 rounded-md px-2 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
           style={{ background: "rgba(8,7,6,0.72)", color: project.accent }}
         >
           {project.stat}

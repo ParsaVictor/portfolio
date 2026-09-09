@@ -82,44 +82,83 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
     const { w, h } = size;
     if (!w || !h) return;
 
+    // Room reserved for the labels, which sit outside the node they belong to.
+    // The box is usually far wider than it is tall, so the ring is an ellipse
+    // rather than a circle — that is what keeps the top and bottom rows inside.
+    const padX = Math.min(96, w * 0.14);
+    const padY = Math.min(64, h * 0.14);
+    const usableW = Math.max(60, w / 2 - padX);
+    const usableH = Math.max(50, h / 2 - padY);
+
     const cx = w / 2;
     const cy = h / 2;
-    const m = Math.min(w, h);
-    const wide = w / h;
-    const rBranch = m * 0.3;
-    const rLeaf = m * 0.21;
+    const rbx = usableW * 0.56;
+    const rby = usableH * 0.58;
+    const rlx = usableW * 0.44;
+    const rly = usableH * 0.42;
+
+    const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
+    const inX = (v: number) => clamp(v, padX, w - padX);
+    const inY = (v: number) => clamp(v, padY, h - padY);
 
     const next: Node[] = [
       { id: "hub", label: hub, x: cx, y: cy, r: 10, color: "#f2ece1", kind: "hub", parent: null, seed: 0 },
     ];
 
+    const sector = (Math.PI * 2) / BRANCHES.length;
+
     BRANCHES.forEach((b, bi) => {
-      const a = -Math.PI / 2 + (bi / BRANCHES.length) * Math.PI * 2;
-      const bx = cx + Math.cos(a) * rBranch * Math.min(wide, 1.5);
-      const by = cy + Math.sin(a) * rBranch;
+      const a = -Math.PI / 2 + bi * sector;
+      const bx = inX(cx + Math.cos(a) * rbx);
+      const by = inY(cy + Math.sin(a) * rby);
       const bIndex = next.length;
       next.push({
         id: b.key, label: b.label, x: bx, y: by, r: 6,
         color: b.color, kind: "branch", parent: 0, seed: bi * 1.7,
       });
 
-      const spread = Math.PI * 0.8;
+      // leaves stay inside their own sector, so neighbouring groups cannot mix
+      const spread = sector * 0.66;
       b.leaves.forEach((leaf, li) => {
         const t = b.leaves.length === 1 ? 0.5 : li / (b.leaves.length - 1);
         const la = a + (t - 0.5) * spread;
         next.push({
           id: b.key + "-" + leaf, label: leaf,
-          x: bx + Math.cos(la) * rLeaf * Math.min(wide, 1.45),
-          y: by + Math.sin(la) * rLeaf,
+          x: inX(bx + Math.cos(la) * rlx),
+          y: inY(by + Math.sin(la) * rly),
           r: 3.2, color: b.color, kind: "leaf", parent: bIndex,
           seed: bi * 3.1 + li * 0.9,
         });
       });
     });
 
+    // Relax the leaf labels apart. Their boxes are wide and short, so overlap is
+    // judged per axis and resolved mostly vertically, where there is slack.
+    const movable = next.map((n, i) => (n.kind === "leaf" ? i : -1)).filter((i) => i >= 0);
+    const halfW = (n: Node) => n.label.length * 3.2 + 14;
+    for (let pass = 0; pass < 40; pass++) {
+      let moved = false;
+      for (let a1 = 0; a1 < movable.length; a1++) {
+        for (let b1 = a1 + 1; b1 < movable.length; b1++) {
+          const p = next[movable[a1]];
+          const q = next[movable[b1]];
+          const needX = halfW(p) + halfW(q);
+          const needY = 24;
+          const dx = p.x - q.x;
+          const dy = p.y - q.y;
+          if (Math.abs(dx) >= needX || Math.abs(dy) >= needY) continue;
+          const push = (needY - Math.abs(dy)) / 2 + 0.5;
+          const dir = dy === 0 ? (p.y < cy ? -1 : 1) : Math.sign(dy);
+          p.y = inY(p.y + dir * push);
+          q.y = inY(q.y - dir * push);
+          moved = true;
+        }
+      }
+      if (!moved) break;
+    }
+
     setNodes(next);
 
-    // one mote set per edge; edges are every node with a parent
     const edges = next.map((n, i) => (n.parent == null ? -1 : i)).filter((i) => i >= 0);
     const list: Mote[] = [];
     edges.forEach((e) => {
@@ -327,7 +366,7 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
     <div
       ref={boxRef}
       className="relative w-full overflow-hidden rounded-3xl"
-      style={{ height: "clamp(430px, 64vh, 680px)" }}
+      style={{ height: "clamp(480px, 70vh, 720px)" }}
     >
       <canvas
         ref={canvasRef}

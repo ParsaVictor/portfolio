@@ -285,12 +285,12 @@ function VisionCard({
         <Brackets color={project.accent} />
 
         <span
-          className="absolute bottom-3 left-3 rounded-md px-2 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
+          className="absolute bottom-3 start-3 rounded-md px-2 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
           style={{ background: "rgba(8,7,6,0.72)", color: project.accent }}
         >
           {project.stat}
         </span>
-        <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-md bg-[rgba(8,7,6,0.72)] px-2 py-1 font-mono text-[10px] tracking-widest text-bone/80 backdrop-blur-sm ltr">
+        <span className="absolute bottom-3 end-3 flex items-center gap-1 rounded-md bg-[rgba(8,7,6,0.72)] px-2 py-1 font-mono text-[10px] tracking-widest text-bone/80 backdrop-blur-sm ltr">
           <Star size={9} fill="currentColor" style={{ color: project.accent }} />
           {digits(project.stars, lang)}
         </span>

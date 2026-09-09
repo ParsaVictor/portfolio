@@ -54,6 +54,7 @@ export class ParticleSystem {
   private camZ = 18;
   private spread = 0;
   private quiet = 0;
+  private rtl = false;
   private mouseForce = 0;
   private offsetX = 0;
   private offsetY = 0;
@@ -217,6 +218,17 @@ export class ParticleSystem {
     this.targetStage = clamp(s, 0, STAGE_COUNT - 1);
   }
 
+  /**
+   * Mirror the instrument for right-to-left reading.
+   *
+   * The layout flips sides in Persian because it is built on logical
+   * properties, but WebGL has no notion of direction — without this the swarm
+   * stays put and ends up sitting underneath the copy.
+   */
+  setRTL(rtl: boolean) {
+    this.rtl = rtl;
+  }
+
   /** 0 = full presence, 1 = stand right down and let a section have the room. */
   setQuiet(v: number) {
     this.quiet = clamp(v, 0, 1);
@@ -291,7 +303,8 @@ export class ParticleSystem {
 
     // drift the instrument off-centre so section copy always has clean ground
     const wide = window.innerWidth > 1024;
-    this.offsetX = wide ? lerp(STAGE_OFFSET_X[seg], STAGE_OFFSET_X[seg + 1], mix) : 0;
+    const ox = wide ? lerp(STAGE_OFFSET_X[seg], STAGE_OFFSET_X[seg + 1], mix) : 0;
+    this.offsetX = this.rtl ? -ox : ox;
     this.offsetY = lerp(STAGE_OFFSET_Y[seg], STAGE_OFFSET_Y[seg + 1], mix);
   }
 
@@ -349,6 +362,7 @@ export class ParticleSystem {
       stage: this.stage,
       spread: this.spread,
       quiet: this.quiet,
+      rtl: this.rtl,
       camZ: this.camZ,
       breathe: this.pMat.uniforms.uBreathe.value,
       opacity: this.pMat.uniforms.uOpacity.value,
