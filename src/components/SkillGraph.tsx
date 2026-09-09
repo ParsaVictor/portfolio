@@ -92,10 +92,10 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
 
     const cx = w / 2;
     const cy = h / 2;
-    const rbx = usableW * 0.56;
-    const rby = usableH * 0.58;
-    const rlx = usableW * 0.44;
-    const rly = usableH * 0.42;
+    const rbx = usableW * 0.5;
+    const rby = usableH * 0.52;
+    const rlx = usableW * 0.5;
+    const rly = usableH * 0.5;
 
     const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
     const inX = (v: number) => clamp(v, padX, w - padX);
@@ -117,8 +117,9 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
         color: b.color, kind: "branch", parent: 0, seed: bi * 1.7,
       });
 
-      // leaves stay inside their own sector, so neighbouring groups cannot mix
-      const spread = sector * 0.66;
+      // leaves fan across most of their own sector — wide enough to breathe,
+      // still bounded so neighbouring disciplines never interleave
+      const spread = sector * 0.92;
       b.leaves.forEach((leaf, li) => {
         const t = b.leaves.length === 1 ? 0.5 : li / (b.leaves.length - 1);
         const la = a + (t - 0.5) * spread;
@@ -142,8 +143,8 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
         for (let b1 = a1 + 1; b1 < movable.length; b1++) {
           const p = next[movable[a1]];
           const q = next[movable[b1]];
-          const needX = halfW(p) + halfW(q);
-          const needY = 24;
+          const needX = halfW(p) + halfW(q) + 6;
+          const needY = 30;
           const dx = p.x - q.x;
           const dy = p.y - q.y;
           if (Math.abs(dx) >= needX || Math.abs(dy) >= needY) continue;

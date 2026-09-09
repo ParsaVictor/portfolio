@@ -92,7 +92,7 @@ export const dict = {
         {
           step: "02 · DATA",
           title: "Build the dataset honestly",
-          body: "Collect, annotate, audit. Most accuracy lives here — 675K annotations taught me that faster than any architecture search.",
+          body: "Collect, annotate, audit. Most of the accuracy is won or lost here — hand-labelling 675K boxes for one dataset taught me that faster than any architecture search ever could.",
         },
         {
           step: "03 · TRAIN",
@@ -111,10 +111,10 @@ export const dict = {
         },
       ],
       stats: [
-        { value: "11", label: "open-source projects" },
+        { value: "10", label: "open-source repos" },
         { value: "3+", label: "years writing code" },
-        { value: "675K", label: "annotations trained on" },
-        { value: "∞", label: "cups of coffee" },
+        { value: "675K", label: "labelled boxes in one dataset" },
+        { value: "50", label: "object classes detected" },
       ],
     },
     cv: {
@@ -257,7 +257,7 @@ export const dict = {
         {
           step: "۰۲ · داده",
           title: "ساختِ صادقانه‌ی دیتاست",
-          body: "جمع‌آوری، برچسب‌زنی، بازرسی. بیشترِ دقت همین‌جا زندگی می‌کند؛ ۶۷۵ هزار annotation این را سریع‌تر از هر جست‌وجوی معماری به من یاد داد.",
+          body: "جمع‌آوری، برچسب‌زنی، بازرسی. بیشترِ دقت همین‌جا برده یا باخته می‌شود؛ برچسب‌زدنِ دستیِ ۶۷۵ هزار جعبه برای یک دیتاست، این را سریع‌تر از هر جست‌وجوی معماری به من یاد داد.",
         },
         {
           step: "۰۳ · آموزش",
@@ -276,10 +276,10 @@ export const dict = {
         },
       ],
       stats: [
-        { value: "۱۱", label: "پروژه‌ی متن‌باز" },
+        { value: "۱۰", label: "مخزن متن‌باز" },
         { value: "+۳", label: "سال کدنویسی" },
-        { value: "۶۷۵ هزار", label: "annotation آموزش‌دیده" },
-        { value: "∞", label: "فنجان قهوه" },
+        { value: "۶۷۵ هزار", label: "جعبه‌ی برچسب‌خورده در یک دیتاست" },
+        { value: "۵۰", label: "کلاسِ شیءِ تشخیص‌داده‌شده" },
       ],
     },
     cv: {
