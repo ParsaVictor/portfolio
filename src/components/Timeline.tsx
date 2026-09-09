@@ -142,8 +142,8 @@ export default function Timeline({
       trigger: wrap,
       // halfway between the original window (78%/62% — raced ahead of the
       // scroll) and the corrected one (90%/10% — dragged behind it).
-      start: "top 84%",
-      end: "bottom 36%",
+      start: "top 70%",
+      end: "bottom 50%",
       onUpdate: (self) => paint(self.progress),
       onRefresh: (self) => paint(self.progress),
     });
