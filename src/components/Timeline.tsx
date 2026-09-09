@@ -140,10 +140,14 @@ export default function Timeline({
 
     const st = ScrollTrigger.create({
       trigger: wrap,
-      // halfway between the original window (78%/62% — raced ahead of the
-      // scroll) and the corrected one (90%/10% — dragged behind it).
-      start: "top 70%",
-      end: "bottom 50%",
+      // Both edges pin to the SAME viewport reference point (dead centre),
+      // so the vh term cancels out of the math entirely: scroll distance
+      // == wrap's own height, exactly. That's what makes this correct
+      // instead of another guessed percentage — draw progress is now
+      // pixel-for-pixel locked to physical scroll through the timeline, so
+      // it can never race ahead or lag behind, at any viewport size.
+      start: "top 36%",
+      end: "bottom 64%",
       onUpdate: (self) => paint(self.progress),
       onRefresh: (self) => paint(self.progress),
     });
