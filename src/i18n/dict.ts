@@ -111,7 +111,7 @@ export const dict = {
         },
       ],
       stats: [
-        { value: "10", label: "open-source repos" },
+        { value: "13", label: "open-source repos" },
         { value: "3+", label: "years writing code" },
         { value: "675K", label: "labelled boxes in one dataset" },
         { value: "50", label: "object classes detected" },
@@ -276,7 +276,7 @@ export const dict = {
         },
       ],
       stats: [
-        { value: "۱۰", label: "مخزن متن‌باز" },
+        { value: "۱۳", label: "مخزن متن‌باز" },
         { value: "+۳", label: "سال کدنویسی" },
         { value: "۶۷۵ هزار", label: "جعبه‌ی برچسب‌خورده در یک دیتاست" },
         { value: "۵۰", label: "کلاسِ شیءِ تشخیص‌داده‌شده" },

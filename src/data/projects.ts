@@ -119,6 +119,20 @@ export const dataProjects: Project[] = [
     stat: "config-driven",
     accent: "#35e0ff",
   },
+  {
+    id: "code-context-engine",
+    title: "Code Context Engine",
+    descEn:
+      "Local-first MCP context engine that cuts AI coding-agent token cost by ~90% — per-project code graphs and intelligent folding route a prompt to the right symbols and send a folded evidence packet instead of whole-file dumps. Rust, tree-sitter, works with Cursor / Claude Code / Codex.",
+    descFa:
+      "موتورِ زمینه‌ی MCP با معماریِ local-first که هزینه‌ی توکنِ ایجنت‌های کدنویسی را حدود ۹۰٪ کم می‌کند — گرافِ کدِ پروژه‌محور و فولدینگِ هوشمند، پرامپت را به سمبل‌های درست می‌رساند و به‌جای ریختنِ کاملِ فایل‌ها، یک بسته‌ی شواهدِ فشرده می‌فرستد. Rust، tree-sitter، سازگار با Cursor / Claude Code / Codex.",
+    tags: ["Rust", "MCP", "tree-sitter", "AI Tooling"],
+    url: "https://github.com/ParsaVictor/code-context-engine",
+    image: "/images/project-code-context-engine.jpg",
+    stars: 0,
+    stat: "~90% fewer tokens",
+    accent: "#a894ff",
+  },
 ];
 
 export const webProjects: Project[] = [
