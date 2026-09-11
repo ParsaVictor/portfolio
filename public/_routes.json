@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": [
+    "/assets/*",
+    "/images/*",
+    "/favicon-32.png",
+    "*.jpg",
+    "*.png",
+    "*.gif",
+    "*.webp",
+    "*.css",
+    "*.js",
+    "*.woff",
+    "*.woff2"
+  ],
+  "rules": [
+    {
+      "include": ["/*"],
+      "exclude": [
+        "/assets/*",
+        "/images/*",
+        "/favicon-32.png",
+        "*.jpg",
+        "*.png",
+        "*.gif",
+        "*.webp",
+        "*.css",
+        "*.js",
+        "*.woff",
+        "*.woff2"
+      ],
+      "lineLimit": 0,
+      "compress": true
+    }
+  ]
+}

@@ -1,13 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "parsa-karkooti",
-  "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
-  "env": {
-    "production": {
-      "vars": {
-        "ENVIRONMENT": "production"
-      }
-    }
-  }
+  "pages_build_output_dir": "./dist"
 }
