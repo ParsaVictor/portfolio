@@ -23,10 +23,13 @@
     <link rel="me" href="https://www.linkedin.com/in/parsa-karkooti/" />
     <link rel="author" href="mailto:1.parsa.karkooti@gmail.com" />
 
-    <meta property="og:type" content="profile" />
+    <!-- og:type is "website", not "profile" — LinkedIn's share composer
+         (stricter than its own Post Inspector) only reliably renders
+         previews for the standard sharable types (website/article), and
+         silently drops the preview for "profile" since that type is meant
+         for an actual profile page, not a shareable link to one. -->
+    <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MPK.dev" />
-    <meta property="profile:first_name" content="Mohammad Parsa" />
-    <meta property="profile:last_name" content="Karkooti" />
     <meta property="og:title" content="Mohammad Parsa Karkooti — AI Engineer" />
     <meta
       property="og:description"
@@ -36,6 +39,8 @@
       property="og:image"
       content="https://parsavictor.pages.dev/images/portrait.jpg"
     />
+    <meta property="og:image:width" content="640" />
+    <meta property="og:image:height" content="640" />
     <meta property="og:image:alt" content="Mohammad Parsa Karkooti" />
     <meta property="og:url" content="https://parsavictor.pages.dev/" />
     <meta property="og:locale" content="en_US" />
