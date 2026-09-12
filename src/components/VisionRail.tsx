@@ -69,6 +69,16 @@ export default function VisionRail() {
         child.style.transform =
           "rotateY(" + -d * 15 + "deg) translateZ(" + -ad * 80 + "px) scale(" + (1 - ad * 0.05) + ")";
         child.style.opacity = String(Math.max(0.25, 1 - ad * 0.42));
+
+        // the card nearest center gets the same "focused" look hover gives
+        // it on desktop — a zoomed still and bright brackets — since touch
+        // never fires :hover to trigger that on its own.
+        const focus = Math.max(0, 1 - ad);
+        const media = child.querySelector<HTMLElement>("[data-media]");
+        if (media) media.style.transform = "scale(" + (1 + focus * 0.05) + ")";
+        for (const b of child.querySelectorAll<HTMLElement>("[data-bracket]")) {
+          b.style.opacity = String(0.7 + focus * 0.3);
+        }
       }
     };
 
@@ -265,7 +275,7 @@ function VisionCard({
       style={{ boxShadow: focus ? "0 30px 90px -40px " + project.accent : undefined }}
     >
       {/* the read-out — the image stays at full brightness, only the HUD sits over it */}
-      <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-black">
+      <div data-media className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-black">
         {project.image ? (
           <img
             src={project.image}
@@ -330,18 +340,22 @@ function Brackets({ color }: { color: string }) {
   return (
     <>
       <span
+        data-bracket
         className={base + " left-3 top-3 border-l-2 border-t-2 group-hover:left-2 group-hover:top-2"}
         style={{ borderColor: color }}
       />
       <span
+        data-bracket
         className={base + " right-3 top-3 border-r-2 border-t-2 group-hover:right-2 group-hover:top-2"}
         style={{ borderColor: color }}
       />
       <span
+        data-bracket
         className={base + " bottom-12 left-3 border-b-2 border-l-2 group-hover:bottom-11 group-hover:left-2"}
         style={{ borderColor: color }}
       />
       <span
+        data-bracket
         className={base + " bottom-12 right-3 border-b-2 border-r-2 group-hover:bottom-11 group-hover:right-2"}
         style={{ borderColor: color }}
       />

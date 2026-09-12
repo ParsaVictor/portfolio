@@ -115,13 +115,16 @@ function FocusRow({
       {/* the focus bar that rides the list as you scroll */}
       <span
         aria-hidden
-        className="absolute inset-y-0 start-0 hidden w-px origin-center sm:block"
+        className="absolute inset-y-0 start-0 w-px origin-center"
         style={{ background: ACCENT, transform: "scaleY(var(--focus))", opacity: 0.9 }}
       />
 
       {/* every project gets a visual — a screenshot where one exists, generated
           cover art in the site's own language where one does not */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-bone/10 bg-black sm:ms-5">
+      <div
+        className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-bone/10 bg-black sm:ms-5"
+        style={{ transform: "scale(calc(1 + var(--focus, 0) * 0.045))" }}
+      >
         {project.image ? (
           <img
             src={project.image}

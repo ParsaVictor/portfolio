@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useLang } from "../i18n/LangProvider";
 
@@ -34,6 +34,31 @@ export default function InteractivePhoto({ src }: { src: string }) {
     my.set(0.5);
     setHover(false);
   }
+
+  // Touch devices never fire mousemove, so the tilt/chromatic-shift below
+  // would otherwise sit frozen forever on mobile — the single biggest
+  // "nothing is happening here" spot on the whole page. Drive the same
+  // mx/my springs from a slow idle drift instead, and pulse the hover look
+  // on periodically so the glitch/spotlight reads as alive without a touch.
+  useEffect(() => {
+    if (!window.matchMedia("(hover: none)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const start = performance.now();
+    let raf = 0;
+    const loop = (now: number) => {
+      const t = (now - start) / 1000;
+      mx.set(0.5 + Math.sin(t * 0.42) * 0.34);
+      my.set(0.5 + Math.cos(t * 0.31) * 0.3);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    const pulse = window.setInterval(() => setHover((h) => !h), 2600);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearInterval(pulse);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="relative mx-auto w-full max-w-[400px] select-none" style={{ perspective: 1200 }}>

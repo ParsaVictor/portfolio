@@ -1,5 +1,7 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { ArrowUpRight, Lock, RotateCw } from "lucide-react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Reveal from "./Reveal";
 import SideLabel from "./SideLabel";
 import { StageCopy } from "./VisionRail";
@@ -10,6 +12,8 @@ import { useScrub } from "../scroll/useScrub";
 import { useHandover } from "../scroll/useHandover";
 import { clamp } from "../lib/num";
 import { openProject, shouldOpenInPage } from "../state/projectModal";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const ACCENT = STAGE_COLORS.web;
 const N = webProjects.length;
@@ -125,8 +129,39 @@ function BrowserCard({
   lang: "en" | "fa";
   view: string;
 }) {
+  const ref = useRef<HTMLAnchorElement>(null);
+
+  // Same trick as the data-console rows: a --focus custom property driven by
+  // scroll position, brightest as the card crosses the middle of the
+  // viewport. On desktop this just adds a subtle boost on top of the mouse
+  // hover; on touch, where :hover never fires, it's the only thing that
+  // makes the window chrome feel alive as it scrolls past.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      el.style.setProperty("--focus", "1");
+      return;
+    }
+    const st = ScrollTrigger.create({
+      trigger: el,
+      start: "top 90%",
+      end: "bottom 15%",
+      onUpdate: (self) => {
+        const f = Math.sin(clamp(self.progress, 0, 1) * Math.PI);
+        el.style.setProperty("--focus", String(Math.pow(f, 0.5)));
+      },
+      onRefresh: (self) => {
+        const f = Math.sin(clamp(self.progress, 0, 1) * Math.PI);
+        el.style.setProperty("--focus", String(Math.pow(f, 0.5)));
+      },
+    });
+    return () => st.kill();
+  }, []);
+
   return (
     <a
+      ref={ref}
       href={project.url}
       target="_blank"
       rel="noreferrer"
@@ -136,6 +171,7 @@ function BrowserCard({
         e.preventDefault();
         openProject(project);
       }}
+      style={{ ["--focus" as string]: "0.3" }}
       className="group block cursor-pointer overflow-hidden rounded-xl border border-bone/12 bg-ink/90 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)] backdrop-blur-md transition-colors duration-300 hover:border-bone/30"
     >
       {/* window chrome */}
@@ -149,13 +185,22 @@ function BrowserCard({
           <Lock size={9} style={{ color: ACCENT }} />
           <span className="truncate">github.com/ParsaVictor/{slug(project.title)}</span>
         </div>
-        <RotateCw
-          size={11}
-          className="text-dim transition-transform duration-700 group-hover:rotate-180"
-        />
+        <span
+          aria-hidden
+          className="inline-flex"
+          style={{ transform: "rotate(calc(var(--focus, 0) * 130deg))" }}
+        >
+          <RotateCw
+            size={11}
+            className="text-dim transition-transform duration-700 group-hover:rotate-180"
+          />
+        </span>
       </div>
 
-      <div className="relative aspect-[16/9] w-full overflow-hidden bg-black">
+      <div
+        className="relative aspect-[16/9] w-full overflow-hidden bg-black"
+        style={{ transform: "scale(calc(1 + var(--focus, 0) * 0.04))" }}
+      >
         {project.image ? (
           <img
             src={project.image}
