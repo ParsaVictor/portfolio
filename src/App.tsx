@@ -41,6 +41,10 @@ export default function App() {
       {/* Scrim ABOVE the canvas: the vignette below it cannot dampen additive
           points, and without this the cloud competes with copy at the edges. */}
       <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(ellipse_62%_58%_at_50%_50%,transparent_35%,rgba(10,9,8,0.72)_100%)]" />
+      {/* Phones: the swarm lives in the top band of the screen, so the lower
+          two thirds — where the paragraphs scroll past — get a steady pool of
+          dark to read against. */}
+      <div className="pointer-events-none fixed inset-0 z-[1] bg-[linear-gradient(180deg,transparent_22%,rgba(10,9,8,0.55)_58%,rgba(10,9,8,0.7)_100%)] lg:hidden" />
       <CustomCursor />
 
       {!loading && (

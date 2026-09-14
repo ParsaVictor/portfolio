@@ -14,6 +14,18 @@ const STAGE_BREATHE = [1.32, 0.78, 0.82, 0.78, 1.24];
 const STAGE_OFFSET_X = [0.1, -1.5, 1.5, -1.5, 0];
 const STAGE_OFFSET_Y = [0, 0.02, 0.16, 0.02, 0];
 
+/**
+ * Phones stack everything in one column, so the swarm can never own "the
+ * other half" of the frame — it is always under the copy. Rather than fight
+ * that, the working chapters lift it into the top band of the screen (where
+ * the section header sits, not the paragraphs) and turn its presence right
+ * down. Hero and contact, which are all form and no reading, keep it full.
+ */
+const MOBILE_OFFSET_Y = [0, 0.82, 0.82, 0.82, 0.05];
+const MOBILE_PRESENCE = [1, 0.5, 0.55, 0.5, 0.95];
+const MOBILE_LINE_PRESENCE = [1, 0.3, 0.42, 0.3, 0.9];
+const MOBILE_BREATHE = [1.18, 0.62, 0.66, 0.62, 1.08];
+
 type Opts = {
   canvas: HTMLCanvasElement;
   colors: string[]; // 5 hex strings, one per stage
@@ -73,20 +85,20 @@ export class ParticleSystem {
       alpha: true,
       powerPreference: "high-performance",
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, opts.mobile ? 2 : 1.75));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, opts.mobile ? 1.5 : 1.75));
     this.renderer.setClearColor(0x000000, 0);
 
     this.camera = new THREE.PerspectiveCamera(48, 1, 0.1, 100);
     this.camera.position.set(0, 0, this.camZ);
-    this.group.scale.setScalar(opts.mobile ? 2.2 : 2.85);
+    this.group.scale.setScalar(opts.mobile ? 2.05 : 2.85);
     this.scene.add(this.group);
 
     const w = window.innerWidth;
     const h = window.innerHeight;
     this.count = this.reduced
       ? 1600
-      : Math.round(clamp((w * h) / (opts.mobile ? 900 : 420), 2400, opts.mobile ? 3600 : 7000));
-    this.lineSeg = this.reduced ? 260 : opts.mobile ? 420 : 900;
+      : Math.round(clamp((w * h) / (opts.mobile ? 1100 : 420), opts.mobile ? 1600 : 2400, opts.mobile ? 2600 : 7000));
+    this.lineSeg = this.reduced ? 260 : opts.mobile ? 300 : 900;
 
     this.mouseForce = this.reduced ? 0 : opts.mobile ? 0.25 : 0.9;
 
@@ -137,7 +149,7 @@ export class ParticleSystem {
         uTime: { value: 0 },
         uMix: { value: 0 },
         uIntro: { value: this.reduced ? 1 : 0 },
-        uSize: { value: this.mobile ? 2.6 : 3.1 },
+        uSize: { value: this.mobile ? 2.3 : 3.1 },
         uPixelRatio: { value: this.renderer.getPixelRatio() },
         uBreathe: { value: 1 },
         uSpread: { value: 0 },
@@ -289,15 +301,21 @@ export class ParticleSystem {
     pu.uColorFrom.value.copy(cFrom);
     pu.uColorTo.value.copy(cTo);
     const hush = 1 - this.quiet * 0.94;
-    pu.uOpacity.value = lerp(STAGE_OPACITY[seg], STAGE_OPACITY[seg + 1], mix) * hush;
-    pu.uBreathe.value = lerp(STAGE_BREATHE[seg], STAGE_BREATHE[seg + 1], mix);
+    const m = this.mobile;
+    const presence = m ? lerp(MOBILE_PRESENCE[seg], MOBILE_PRESENCE[seg + 1], mix) : 1;
+    const linePresence = m ? lerp(MOBILE_LINE_PRESENCE[seg], MOBILE_LINE_PRESENCE[seg + 1], mix) : 1;
+    pu.uOpacity.value = lerp(STAGE_OPACITY[seg], STAGE_OPACITY[seg + 1], mix) * hush * presence;
+    pu.uBreathe.value = m
+      ? lerp(MOBILE_BREATHE[seg], MOBILE_BREATHE[seg + 1], mix)
+      : lerp(STAGE_BREATHE[seg], STAGE_BREATHE[seg + 1], mix);
     pu.uSpread.value = this.spread;
 
     const lu = this.lMat.uniforms;
     lu.uMix.value = mix;
     lu.uColorFrom.value.copy(cFrom);
     lu.uColorTo.value.copy(cTo);
-    lu.uOpacity.value = lerp(STAGE_LINE_OPACITY[seg], STAGE_LINE_OPACITY[seg + 1], mix) * hush;
+    lu.uOpacity.value =
+      lerp(STAGE_LINE_OPACITY[seg], STAGE_LINE_OPACITY[seg + 1], mix) * hush * linePresence;
     lu.uBreathe.value = pu.uBreathe.value;
     lu.uSpread.value = this.spread;
 
@@ -305,7 +323,9 @@ export class ParticleSystem {
     const wide = window.innerWidth > 1024;
     const ox = wide ? lerp(STAGE_OFFSET_X[seg], STAGE_OFFSET_X[seg + 1], mix) : 0;
     this.offsetX = this.rtl ? -ox : ox;
-    this.offsetY = lerp(STAGE_OFFSET_Y[seg], STAGE_OFFSET_Y[seg + 1], mix);
+    this.offsetY = m
+      ? lerp(MOBILE_OFFSET_Y[seg], MOBILE_OFFSET_Y[seg + 1], mix)
+      : lerp(STAGE_OFFSET_Y[seg], STAGE_OFFSET_Y[seg + 1], mix);
   }
 
   update(dtMs: number) {

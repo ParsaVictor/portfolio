@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Star } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, ChevronRight, MoveHorizontal, Star } from "lucide-react";
 import Reveal from "./Reveal";
 import Scramble from "./Scramble";
 import SideLabel from "./SideLabel";
@@ -52,16 +52,44 @@ export default function VisionRail() {
   const stageRef = useHandover<HTMLDivElement>(1);
   const railRef = useRef<HTMLDivElement>(null);
 
+  // Which card sits in the rail's focus slot on touch screens. Drives the
+  // counter, the dots and the arrows — the affordances that tell a first-time
+  // visitor there is more than one project here.
+  const [mActive, setMActive] = useState(0);
+
+  const railTo = useCallback((i: number) => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const child = rail.children[clamp(i, 0, N - 1)] as HTMLElement | undefined;
+    if (!child) return;
+    rail.scrollTo({
+      left: child.offsetLeft + child.offsetWidth / 2 - rail.clientWidth / 2,
+      behavior: "smooth",
+    });
+  }, []);
+
   // Touch screens keep native scrolling — momentum and snapping are better than
   // anything I would write — but the cards still ride the same arc, driven off
   // the rail's own scroll position rather than the page's.
   useEffect(() => {
     const rail = railRef.current;
     if (!rail) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const paint = () => {
       const mid = rail.scrollLeft + rail.clientWidth / 2;
+      let best = 0;
+      let bestD = Infinity;
+      Array.from(rail.children).forEach((c, i) => {
+        const el = c as HTMLElement;
+        const dd = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid);
+        if (dd < bestD) {
+          bestD = dd;
+          best = i;
+        }
+      });
+      setMActive(best);
+      if (reduced) return;
       for (const child of Array.from(rail.children) as HTMLElement[]) {
         const c = child.offsetLeft + child.offsetWidth / 2;
         const d = (c - mid) / Math.max(1, child.offsetWidth);
@@ -86,10 +114,44 @@ export default function VisionRail() {
     rail.addEventListener("scroll", paint, { passive: true });
     window.addEventListener("resize", paint);
     const settle = window.setTimeout(paint, 600);
+
+    // The first time the rail scrolls into view it nudges itself sideways and
+    // settles back: a wordless "this moves" that a peeking edge alone never
+    // managed to say. Once, and only if nobody has already touched it.
+    let touched = false;
+    let nudge = 0;
+    let undo = 0;
+    const onTouch = () => {
+      touched = true;
+    };
+    rail.addEventListener("touchstart", onTouch, { passive: true, once: true });
+    rail.addEventListener("pointerdown", onTouch, { passive: true, once: true });
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        if (reduced || touched || rail.scrollLeft > 4) return;
+        nudge = window.setTimeout(() => {
+          if (touched || rail.scrollLeft > 4) return;
+          rail.scrollTo({ left: rail.clientWidth * 0.22, behavior: "smooth" });
+          undo = window.setTimeout(() => {
+            if (!touched) rail.scrollTo({ left: 0, behavior: "smooth" });
+          }, 560);
+        }, 700);
+      },
+      { threshold: 0.55 }
+    );
+    io.observe(rail);
+
     return () => {
       rail.removeEventListener("scroll", paint);
+      rail.removeEventListener("touchstart", onTouch);
+      rail.removeEventListener("pointerdown", onTouch);
       window.removeEventListener("resize", paint);
       window.clearTimeout(settle);
+      window.clearTimeout(nudge);
+      window.clearTimeout(undo);
+      io.disconnect();
     };
   }, []);
   const current = cvProjects[clamp(active, 0, N - 1)];
@@ -98,27 +160,84 @@ export default function VisionRail() {
     <section id="cv" data-scene="1" className="relative">
       {/* ── small screens: a native horizontal snap rail ──────────────── */}
       <div className="lg:hidden">
-        <div className="px-6 pb-8 pt-20">
+        <div className="px-6 pb-6 pt-20">
           <StageCopy accent={ACCENT} meta={t.cv} />
         </div>
+
+        {/* the read-out: which detection is in the slot, out of how many */}
+        <div className="mx-6 mb-5 flex items-end justify-between gap-4 border-t border-bone/10 pt-4">
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-2 font-mono text-[11px] tracking-[0.24em] text-dim ltr">
+              <span className="text-2xl font-bold tabular-nums" style={{ color: ACCENT }}>
+                {digits(String(mActive + 1).padStart(2, "0"), lang)}
+              </span>
+              <span>/ {digits(String(N).padStart(2, "0"), lang)}</span>
+            </div>
+            <div className="mt-1 truncate font-mono text-[11px] tracking-wider text-bone/80 ltr">
+              {cvProjects[mActive].title}
+            </div>
+          </div>
+          <div dir="ltr" className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => railTo(mActive - 1)}
+              disabled={mActive === 0}
+              aria-label={t.cv.prev}
+              className="grid h-10 w-10 place-items-center rounded-full border border-bone/15 text-bone transition-opacity disabled:opacity-30"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => railTo(mActive + 1)}
+              disabled={mActive === N - 1}
+              aria-label={t.cv.next}
+              className="grid h-10 w-10 place-items-center rounded-full border text-ink transition-opacity disabled:opacity-30"
+              style={{ background: ACCENT, borderColor: ACCENT }}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+
         <div
           ref={railRef}
           dir="ltr"
-          className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-[9vw] pb-14 [-ms-overflow-style:none] [perspective:1100px] [scrollbar-width:none]"
+          className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-[11vw] pb-6 [-ms-overflow-style:none] [perspective:1100px] [scrollbar-width:none] sm:px-[21vw]"
         >
           {cvProjects.map((p, i) => (
             <div
               key={p.id}
-              className="w-[82vw] shrink-0 snap-center will-change-transform sm:w-[58vw]"
+              className="w-[78vw] shrink-0 snap-center will-change-transform sm:w-[58vw]"
               style={{ transition: "opacity 220ms linear" }}
             >
               <VisionCard project={p} index={i} lang={lang} view={t.project.open} />
             </div>
           ))}
         </div>
-        <p className="px-6 pb-14 font-mono text-[10px] uppercase tracking-[0.26em] text-dim">
-          {t.cv.railHint}
-        </p>
+
+        {/* dots + the hint, together: the dots say "there are N", the hint says "swipe" */}
+        <div className="flex flex-col items-center gap-3 px-6 pb-16 pt-2">
+          <div dir="ltr" className="flex items-center gap-2">
+            {cvProjects.map((p, i) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => railTo(i)}
+                aria-label={p.title}
+                className="h-1.5 rounded-full transition-all duration-300"
+                style={{
+                  width: i === mActive ? 22 : 6,
+                  background: i === mActive ? ACCENT : "rgba(242,236,225,0.22)",
+                }}
+              />
+            ))}
+          </div>
+          <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.26em] text-dim">
+            <MoveHorizontal size={12} className="animate-[mpk-nudge_1.8s_ease-in-out_infinite]" />
+            {t.cv.swipeHint}
+          </p>
+        </div>
       </div>
 
       {/* ── desktop: sticky stage — cloud left, content right ───────── */}

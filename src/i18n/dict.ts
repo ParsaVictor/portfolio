@@ -125,6 +125,9 @@ export const dict = {
       desc: "Reading a plate at speed, spotting smoke before anyone smells it, telling a robber in a balaclava from a customer in a mask. Real footage, real hardware, in the moment it matters.",
       sideNote: "The swarm holds a lens here. Everything in this section is about teaching a machine to look.",
       railHint: "Scroll to move through the detections",
+      swipeHint: "Swipe to move through the detections",
+      prev: "Previous project",
+      next: "Next project",
     },
     data: {
       index: "02",
@@ -290,6 +293,9 @@ export const dict = {
       desc: "خواندنِ پلاک در سرعت، دیدنِ دود پیش از آنکه کسی بویش را حس کند، تشخیصِ سارقِ نقاب‌دار از مشتریِ ماسک‌دار. تصویرِ واقعی، سخت‌افزارِ واقعی، در همان لحظه‌ای که مهم است.",
       sideNote: "ابرِ نقاط اینجا به عدسی تبدیل می‌شود. همه‌ی این بخش درباره‌ی یاد دادنِ «دیدن» به ماشین است.",
       railHint: "برای حرکت بین تشخیص‌ها اسکرول کن",
+      swipeHint: "برای دیدن بقیه‌ی پروژه‌ها بکش",
+      prev: "پروژه‌ی قبلی",
+      next: "پروژه‌ی بعدی",
     },
     data: {
       index: "۰۲",

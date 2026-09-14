@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef } from "react";
 import { ArrowUpRight, Lock, RotateCw } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Reveal from "./Reveal";
 import SideLabel from "./SideLabel";
 import { StageCopy } from "./VisionRail";
 import { useLang } from "../i18n/LangProvider";
@@ -49,17 +48,34 @@ export default function WebStack() {
 
   return (
     <section id="web" data-scene="3" className="relative">
-      {/* ── small screens: plain stacked cards ────────────────────────── */}
+      {/* ── small screens: the windows deal into a stack as you scroll ──
+          Pure CSS sticky: each card pins a little lower than the one before,
+          so the window chrome of earlier cards stays visible as tabs behind
+          the current one — the same "dealing" grammar as the desktop stage,
+          with no scroll maths and nothing to fight the touch scroller. */}
       <div className="lg:hidden">
         <div className="px-6 pb-8 pt-20">
           <StageCopy accent={ACCENT} meta={t.web} />
+          <p className="mt-6 border-t border-bone/10 pt-4 font-mono text-[10px] leading-6 tracking-[0.2em] text-dim ltr">
+            {t.web.stack}
+          </p>
         </div>
-        <div className="space-y-6 px-6 pb-16">
+        <div className="px-6 pb-24">
           {webProjects.map((p, i) => (
-            <Reveal key={p.id} variant="up" duration={850} delay={i * 100}>
-              <BrowserCard project={p} index={i} lang={lang} view={t.project.open} />
-            </Reveal>
+            <div
+              key={p.id}
+              className="sticky"
+              style={{
+                top: "calc(4.5rem + " + i * 0.85 + "rem)",
+                marginBottom: i === N - 1 ? 0 : "1.5rem",
+                zIndex: 10 + i,
+              }}
+            >
+              <BrowserCard project={p} index={i} lang={lang} view={t.project.open} solid />
+            </div>
           ))}
+          {/* room for the last card to travel fully into the slot */}
+          <div className="h-[22vh]" />
         </div>
       </div>
 
@@ -123,11 +139,13 @@ function BrowserCard({
   index,
   lang,
   view,
+  solid = false,
 }: {
   project: Project;
   index: number;
   lang: "en" | "fa";
   view: string;
+  solid?: boolean;
 }) {
   const ref = useRef<HTMLAnchorElement>(null);
 
@@ -172,7 +190,12 @@ function BrowserCard({
         openProject(project);
       }}
       style={{ ["--focus" as string]: "0.3" }}
-      className="group block cursor-pointer overflow-hidden rounded-xl border border-bone/12 bg-ink/90 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)] backdrop-blur-md transition-colors duration-300 hover:border-bone/30"
+      className={
+        "group block cursor-pointer overflow-hidden rounded-xl border border-bone/12 transition-colors duration-300 hover:border-bone/30 " +
+        (solid
+          ? "bg-ink shadow-[0_-14px_40px_-16px_rgba(0,0,0,0.95)]"
+          : "bg-ink/90 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)] backdrop-blur-md")
+      }
     >
       {/* window chrome */}
       <div dir="ltr" className="flex items-center gap-3 border-b border-bone/10 px-4 py-2.5">

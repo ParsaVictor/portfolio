@@ -79,6 +79,17 @@ body {
   }
 }
 
+/* the swipe-hint glyph slides side to side, the way a thumb would */
+@keyframes mpk-nudge {
+  0%,
+  100% {
+    transform: translateX(-4px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+}
+
 @layer utilities {
   /* The overlay scrolls internally, so it needs a scrollbar people can see. */
   .mpk-scroll {
