@@ -29,19 +29,24 @@ export function measureStages() {
     return el ? el.offsetTop : 0;
   });
 
-  entry = tops.map((top, i) => (i === 0 ? 0 : Math.max(0, top - vh * 0.3)));
-  // keep them strictly increasing even if a section is unexpectedly short
-  for (let i = 1; i < entry.length; i++) {
-    if (entry[i] <= entry[i - 1]) entry[i] = entry[i - 1] + vh;
-  }
-  // The handover is a run of scroll immediately before each entry — long
-  // enough (about a screen and a half) that the veil sweeps, holds on the
-  // chapter number and clears at a pace you can follow, not a blink.
-  handover = entry.map((e, i) => {
+  // Every chapter has a seam block in front of it (ChapterBreak, tagged with
+  // the chapter's id). The handover begins only once the chapter before has
+  // been read to its end — the moment the seam's top edge reaches the bottom
+  // of the screen — and finishes when the next chapter's own top has risen a
+  // third of the way up. The seam is tall on purpose: that empty run is the
+  // room the veil and the chapter number get to play out in.
+  entry = tops.map((top, i) => (i === 0 ? 0 : Math.max(0, top - vh * 0.35)));
+  handover = STAGES.map((id, i) => {
     if (i === 0) return 0;
-    const span = Math.min(vh * 1.55, (e - entry[i - 1]) * 0.6);
-    return e - Math.max(span, 1);
+    const seam = document.querySelector<HTMLElement>('[data-seam="' + id + '"]');
+    const start = seam ? seam.offsetTop - vh : entry[i] - vh;
+    return Math.max(0, start);
   });
+  // keep everything strictly increasing even if a section is unexpectedly short
+  for (let i = 1; i < entry.length; i++) {
+    if (handover[i] <= entry[i - 1]) handover[i] = entry[i - 1] + 1;
+    if (entry[i] <= handover[i] + vh * 0.5) entry[i] = handover[i] + vh * 0.5;
+  }
 }
 
 /** Integer inside a chapter, fractional only across a handover. */

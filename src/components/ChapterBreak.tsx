@@ -14,10 +14,13 @@ gsap.registerPlugin(ScrollTrigger);
  * you have left one room and entered another.
  */
 export default function ChapterBreak({
+  seam,
   index,
   label,
   accent,
 }: {
+  /** id of the chapter this seam opens onto — scrollStore reads it to time the handover */
+  seam: string;
   index: string;
   label: string;
   accent: string;
@@ -58,7 +61,12 @@ export default function ChapterBreak({
   }, []);
 
   return (
-    <div ref={wrapRef} className="relative overflow-hidden py-16 md:py-24" aria-hidden={false}>
+    <div
+      ref={wrapRef}
+      data-seam={seam}
+      className="relative flex min-h-[72vh] items-center overflow-hidden py-16 md:min-h-[78vh] md:py-24"
+      aria-hidden={false}
+    >
       {/* the ghost numeral */}
       <span
         ref={ghostRef}
@@ -69,7 +77,7 @@ export default function ChapterBreak({
         {index}
       </span>
 
-      <div className="relative mx-auto flex max-w-7xl items-center gap-5 px-6 lg:px-10">
+      <div className="relative mx-auto flex w-full max-w-7xl items-center gap-5 px-6 lg:px-10">
         <span className="font-mono text-xs font-bold tabular-nums tracking-[0.2em] ltr" style={{ color: accent }}>
           {index}
         </span>

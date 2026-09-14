@@ -60,19 +60,19 @@ export default function App() {
           <Marquee />
           <AboutStage />
         </ErrorBoundary>
-        <ChapterBreak index={t.cv.index} label={t.cv.kicker} accent={STAGE_COLORS.cv} />
+        <ChapterBreak seam="cv" index={t.cv.index} label={t.cv.kicker} accent={STAGE_COLORS.cv} />
         <ErrorBoundary>
           <VisionRail />
         </ErrorBoundary>
-        <ChapterBreak index={t.data.index} label={t.data.kicker} accent={STAGE_COLORS.data} />
+        <ChapterBreak seam="data" index={t.data.index} label={t.data.kicker} accent={STAGE_COLORS.data} />
         <ErrorBoundary>
           <DataConsole />
         </ErrorBoundary>
-        <ChapterBreak index={t.web.index} label={t.web.kicker} accent={STAGE_COLORS.web} />
+        <ChapterBreak seam="web" index={t.web.index} label={t.web.kicker} accent={STAGE_COLORS.web} />
         <ErrorBoundary>
           <WebStack />
         </ErrorBoundary>
-        <ChapterBreak index="04" label={t.contact.kicker} accent={STAGE_COLORS.contact} />
+        <ChapterBreak seam="contact" index="04" label={t.contact.kicker} accent={STAGE_COLORS.contact} />
         <ErrorBoundary>
           <Contact />
         </ErrorBoundary>
