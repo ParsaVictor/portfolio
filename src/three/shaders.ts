@@ -16,6 +16,8 @@ uniform float uBreathe;
 uniform float uSpread;      // 0 at rest, 1 mid-transition — the cloud flies apart
 uniform float uMouseForce;
 uniform float uPointerR;
+uniform float uMidW;       // 1 while the swarm is reading out a chapter number
+uniform mat3  uUnrot;      // undoes the group rotation so the glyph faces the lens
 uniform vec2  uPointer;
 uniform vec3  uColorFrom;
 uniform vec3  uColorTo;
@@ -23,6 +25,7 @@ uniform vec3  uColorTo;
 attribute vec3  aFrom;
 attribute vec3  aTo;
 attribute vec3  aCore;
+attribute vec3  aMid;
 attribute float aScale;
 attribute float aSeed;
 
@@ -32,7 +35,9 @@ varying float vFade;
 varying float vHot;
 
 void main() {
-  vec3 shaped = mix(aFrom, aTo, uMix);
+  // between rooms the geometry passes through a flat glyph — the chapter
+  // number — held upright regardless of how the group happens to be turned
+  vec3 shaped = mix(mix(aFrom, aTo, uMix), uUnrot * aMid, uMidW);
 
   // birth: bloom outward from a dense core, points arriving on staggered delays
   float delay = aSeed * 0.35;

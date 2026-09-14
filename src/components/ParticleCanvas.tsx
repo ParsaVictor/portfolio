@@ -71,6 +71,10 @@ export default function ParticleCanvas({ active }: { active: boolean }) {
       };
 
       let started = false;
+      // While the swarm is spelling the next chapter's number the veil is at full
+      // cover underneath it, so the canvas steps above the veil for that beat
+      // and drops back under the page the moment the number dissolves.
+      let lifted = false;
       const loop = (now: number) => {
         raf = requestAnimationFrame(loop);
         const dt = now - last;
@@ -85,6 +89,11 @@ export default function ParticleCanvas({ active }: { active: boolean }) {
           s.setStage(scrollStore.stage);
           s.setQuiet(stepQuiet(dt));
           s.update(dt);
+          const lift = s.glyphWeight() > 0.85;
+          if (lift !== lifted) {
+            lifted = lift;
+            canvas.style.zIndex = lift ? "25" : "";
+          }
         } catch (err) {
           // Never let a single bad frame kill the rAF loop silently — the
           // canvas would freeze on its last frame while the rest of the

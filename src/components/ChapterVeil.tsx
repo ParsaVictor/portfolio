@@ -6,16 +6,16 @@ import { STAGE_COLORS, STAGES } from "../config";
 /**
  * The sheet that takes the screen between two chapters.
  *
- * One dark plate descends over the page like a scanner head: its leading edge
- * is a bright line in the next chapter's colour, and while the plate covers
- * the screen — exactly when the particle swarm is at its loosest — it carries
- * the number and name of the chapter you are about to enter. Then it keeps
- * going and clears off the bottom, revealing the new room from the top down.
+ * One dark plate rises from the bottom of the screen — the same direction the
+ * page is moving, so it reads as the next room sliding up into place — with a
+ * bright leading edge in the next chapter's colour. It holds at full cover for
+ * a beat: that is when the particle swarm, lifted above the plate, stands as
+ * the number of the chapter ahead, with the chapter's name printed beneath.
+ * Then the plate keeps rising and clears off the top, revealing the new room
+ * from the bottom up.
  *
- * A single sweep in one direction reads as "turning the page", which the old
- * rank of columns closing from both edges never quite did. Everything here is
- * a transform or an opacity on a fixed layer, so it costs nothing to animate
- * and can never disturb the sticky stages underneath.
+ * Everything here is a transform or an opacity on a fixed layer, so it costs
+ * nothing to animate and can never disturb the sticky stages underneath.
  */
 export default function ChapterVeil() {
   const { t } = useLang();
@@ -23,18 +23,12 @@ export default function ChapterVeil() {
   const plateRef = useRef<HTMLDivElement>(null);
   const beamRef = useRef<HTMLDivElement>(null);
   const glowRef = useRef<HTMLDivElement>(null);
-  const indexRef = useRef<HTMLSpanElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
   const lineRef = useRef<HTMLSpanElement>(null);
+  const haloRef = useRef<HTMLDivElement>(null);
 
   // what the plate says as it passes: the chapter it is opening onto
-  const meta = [
-    { index: "00", label: t.rail.hero },
-    { index: t.cv.index, label: t.cv.kicker },
-    { index: t.data.index, label: t.data.kicker },
-    { index: t.web.index, label: t.web.kicker },
-    { index: "04", label: t.contact.kicker },
-  ];
+  const meta = [t.rail.hero, t.cv.kicker, t.data.kicker, t.web.kicker, t.contact.kicker];
   const metaRef = useRef(meta);
   metaRef.current = meta;
 
@@ -54,50 +48,50 @@ export default function ChapterVeil() {
       const accent = STAGE_COLORS[STAGES[next]];
       if (next !== shown) {
         shown = next;
-        const m = metaRef.current[next];
-        if (indexRef.current) indexRef.current.textContent = m.index;
-        if (labelRef.current) labelRef.current.textContent = m.label;
-        if (indexRef.current) indexRef.current.style.color = accent;
+        if (labelRef.current) labelRef.current.textContent = metaRef.current[next];
         if (lineRef.current) lineRef.current.style.background = accent;
         if (beamRef.current) {
           beamRef.current.style.background =
             "linear-gradient(90deg, transparent, " + accent + " 30%, " + accent + " 70%, transparent)";
           beamRef.current.style.boxShadow = "0 0 24px 2px " + accent + "aa";
         }
+        if (haloRef.current) {
+          haloRef.current.style.background =
+            "radial-gradient(ellipse 60% 50% at 50% 46%, " + accent + "1f, transparent 70%)";
+        }
       }
 
-      // the plate travels one full screen height, -100% → 0 → +100%, with a
-      // hold at full cover in the middle so the readout gets a beat to land
+      // the plate travels one full screen height, +100% → 0 → −100%, with a
+      // hold at full cover in the middle so the number gets a beat to land
       const ss = (v: number) => v * v * (3 - 2 * v);
       let y: number;
-      if (p < 0.42) y = (ss(p / 0.42) - 1) * 100;
-      else if (p > 0.58) y = ss((p - 0.58) / 0.42) * 100;
+      if (p < 0.42) y = (1 - ss(p / 0.42)) * 100;
+      else if (p > 0.58) y = -ss((p - 0.58) / 0.42) * 100;
       else y = 0;
       if (plateRef.current) plateRef.current.style.transform = "translate3d(0," + y + "%,0)";
 
-      // the beam rides the leading edge: bottom of the plate on the way in,
-      // top of it on the way out
+      // the beam rides the leading edge: top of the plate on the way up and
+      // in, bottom of it on the way out
+      const entering = p < 0.5;
       if (beamRef.current) {
-        beamRef.current.style.top = p < 0.5 ? "100%" : "0%";
+        beamRef.current.style.top = entering ? "0%" : "100%";
         beamRef.current.style.opacity = String(0.6 + Math.sin(p * Math.PI) * 0.4);
       }
       if (glowRef.current) {
-        glowRef.current.style.top = p < 0.5 ? "100%" : "0%";
-        glowRef.current.style.transform = p < 0.5 ? "translateY(-100%)" : "none";
+        glowRef.current.style.top = entering ? "0%" : "100%";
+        glowRef.current.style.transform = entering ? "none" : "translateY(-100%)";
         glowRef.current.style.background =
-          "linear-gradient(" + (p < 0.5 ? "0deg" : "180deg") + ", " + accent + "26, transparent)";
+          "linear-gradient(" + (entering ? "180deg" : "0deg") + ", " + accent + "26, transparent)";
       }
 
       // the readout is only legible around full cover
-      const cover = Math.max(0, 1 - Math.abs(p - 0.5) / 0.32);
-      const k = cover * cover * (3 - 2 * cover);
-      if (indexRef.current) {
-        indexRef.current.style.opacity = String(k);
-        indexRef.current.style.transform = "translate3d(0," + (1 - k) * 18 + "px,0)";
-      }
+      const cover = Math.max(0, 1 - Math.abs(p - 0.5) / 0.3);
+      const k = ss(cover);
+      if (haloRef.current) haloRef.current.style.opacity = String(k);
       if (labelRef.current) {
-        labelRef.current.style.opacity = String(k * 0.9);
-        labelRef.current.style.letterSpacing = 0.5 - k * 0.15 + "em";
+        labelRef.current.style.opacity = String(k);
+        labelRef.current.style.transform = "translate3d(0," + (1 - k) * 14 + "px,0)";
+        labelRef.current.style.letterSpacing = 0.46 - k * 0.12 + "em";
       }
       if (lineRef.current) lineRef.current.style.transform = "scaleX(" + k + ")";
     });
@@ -113,41 +107,37 @@ export default function ChapterVeil() {
       <div
         ref={plateRef}
         className="absolute inset-0 bg-ink will-change-transform"
-        style={{ transform: "translate3d(0,-100%,0)" }}
+        style={{ transform: "translate3d(0,100%,0)" }}
       >
         {/* fine scanlines — a scanner head, not a curtain */}
         <div
-          className="absolute inset-0 opacity-[0.16]"
+          className="absolute inset-0 opacity-[0.14]"
           style={{
             backgroundImage:
               "repeating-linear-gradient(180deg, rgba(242,236,225,0.12) 0 1px, transparent 1px 4px)",
           }}
         />
-        {/* the readout */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
-          <span
-            ref={indexRef}
-            className="font-display text-[clamp(5rem,22vw,14rem)] font-bold leading-none tabular-nums ltr"
-            style={{ opacity: 0 }}
-          />
-          <span
-            ref={lineRef}
-            className="h-px w-24 origin-center"
-            style={{ transform: "scaleX(0)" }}
-          />
+        {/* a soft pool of the chapter's colour behind the number the swarm draws */}
+        <div ref={haloRef} className="absolute inset-0" style={{ opacity: 0 }} />
+
+        {/* the chapter's name, printed under the number. The number itself is
+            the particle swarm, which sits on its own layer above this plate. */}
+        <div className="absolute inset-x-0 top-[66%] flex flex-col items-center gap-3 px-6 text-center sm:top-[68%]">
+          <span ref={lineRef} className="h-px w-16 origin-center" style={{ transform: "scaleX(0)" }} />
           <span
             ref={labelRef}
-            className="font-mono text-[11px] uppercase text-bone/70 sm:text-xs ltr"
-            style={{ opacity: 0, letterSpacing: "0.5em" }}
+            className="font-mono text-[12px] font-medium uppercase text-bone sm:text-sm ltr"
+            style={{ opacity: 0, letterSpacing: "0.46em" }}
           />
         </div>
+
         {/* a soft wash behind the leading edge */}
-        <div ref={glowRef} className="absolute inset-x-0 h-[28vh]" style={{ top: "100%" }} />
+        <div ref={glowRef} className="absolute inset-x-0 h-[28vh]" style={{ top: "0%" }} />
         {/* the leading edge itself */}
         <div
           ref={beamRef}
           className="absolute inset-x-0 h-[2px] -translate-y-1/2"
-          style={{ top: "100%", opacity: 0 }}
+          style={{ top: "0%", opacity: 0 }}
         />
       </div>
     </div>

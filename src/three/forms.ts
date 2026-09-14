@@ -18,6 +18,7 @@ export type FormSet = {
   points: Float32Array[]; // one per stage
   lines: Float32Array[]; // one per stage
   core: Float32Array; // birth position (tight glowing core)
+  digits: Float32Array[]; // the glyph shown while entering stage i (index 0 unused)
 };
 
 /* ------------------------------------------------------------------ helpers */
@@ -369,6 +370,7 @@ export function buildForms(pointCount: number, lineSeg: number): FormSet {
 
   return {
     core,
+    digits: ["00", "01", "02", "03", "04"].map((d, i) => digitForm(d, pointCount, 900 + i)),
     points: [
       sphereForm(base),
       eyeForm(base, 12),
@@ -384,4 +386,53 @@ export function buildForms(pointCount: number, lineSeg: number): FormSet {
       atLines(lineSeg, 441),
     ],
   };
+}
+
+/* ------------------------------------------------------------ chapter digits */
+
+/**
+ * The swarm reads out the number of the chapter it is opening onto: between
+ * two rooms the points gather into a flat "01", "02"… glyph before flowing on
+ * into the next geometry. The glyph is sampled from real text rendered to a
+ * scratch canvas, so it stays in the site's own typeface.
+ *
+ * Coordinates: x in ~[-1.05, 1.05], y in ~[-0.55, 0.55], a whisper of depth so
+ * the face still catches the point-size falloff and does not read as a decal.
+ */
+export function digitForm(text: string, count: number, seed: number): Float32Array {
+  const out = new Float32Array(count * 3);
+  const rand = mulberry32(seed);
+  const W = 360;
+  const H = 180;
+  const cv = document.createElement("canvas");
+  cv.width = W;
+  cv.height = H;
+  const ctx = cv.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return out;
+  ctx.fillStyle = "#fff";
+  ctx.font = '700 150px "Space Grotesk", "Helvetica Neue", Arial, sans-serif';
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, W / 2, H / 2 + 4);
+
+  const data = ctx.getImageData(0, 0, W, H).data;
+  const cells: number[] = [];
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (data[(y * W + x) * 4 + 3] > 140) cells.push(y * W + x);
+    }
+  }
+  if (cells.length === 0) return out;
+
+  // every point picks a random lit pixel — a dense enough budget makes the
+  // strokes read as solid, a thin one as a stippled glyph, both fine
+  for (let i = 0; i < count; i++) {
+    const c = cells[Math.floor(rand() * cells.length)];
+    const px = (c % W) + rand() - 0.5;
+    const py = Math.floor(c / W) + rand() - 0.5;
+    out[i * 3] = ((px / W) * 2 - 1) * 1.05;
+    out[i * 3 + 1] = (1 - (py / H) * 2) * 0.55;
+    out[i * 3 + 2] = (rand() - 0.5) * 0.12;
+  }
+  return out;
 }

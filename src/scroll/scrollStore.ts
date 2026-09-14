@@ -34,10 +34,12 @@ export function measureStages() {
   for (let i = 1; i < entry.length; i++) {
     if (entry[i] <= entry[i - 1]) entry[i] = entry[i - 1] + vh;
   }
-  // the handover is a fixed run of scroll immediately before each entry
+  // The handover is a run of scroll immediately before each entry — long
+  // enough (about a screen and a half) that the veil sweeps, holds on the
+  // chapter number and clears at a pace you can follow, not a blink.
   handover = entry.map((e, i) => {
     if (i === 0) return 0;
-    const span = Math.min(vh * 0.8, (e - entry[i - 1]) * 0.5);
+    const span = Math.min(vh * 1.55, (e - entry[i - 1]) * 0.6);
     return e - Math.max(span, 1);
   });
 }

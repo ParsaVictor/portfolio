@@ -9,10 +9,10 @@ const STAGE_COUNT = 5; // hero · vision · neural · web · contact
 const STAGE_OPACITY = [0.8, 0.72, 0.78, 0.72, 0.92];
 const STAGE_LINE_OPACITY = [0.34, 0.3, 0.46, 0.34, 0.55];
 /** Hero fills the frame; the working sections keep the form compact. */
-const STAGE_BREATHE = [1.32, 0.78, 0.82, 0.78, 1.24];
+const STAGE_BREATHE = [1.32, 0.94, 0.98, 0.94, 1.24];
 /** Which side of the viewport the instrument owns, so copy always gets the other. */
-const STAGE_OFFSET_X = [0.1, -1.5, 1.5, -1.5, 0];
-const STAGE_OFFSET_Y = [0, 0.02, 0.16, 0.02, 0];
+const STAGE_OFFSET_X = [0.1, -1.08, 1.08, -1.08, 0];
+const STAGE_OFFSET_Y = [0, -0.06, 0.06, -0.06, 0];
 
 /**
  * Phones stack everything in one column, so the swarm can never own "the
@@ -25,6 +25,9 @@ const MOBILE_OFFSET_Y = [0, 0.82, 0.82, 0.82, 0.05];
 const MOBILE_PRESENCE = [1, 0.5, 0.55, 0.5, 0.95];
 const MOBILE_LINE_PRESENCE = [1, 0.3, 0.42, 0.3, 0.9];
 const MOBILE_BREATHE = [1.18, 0.62, 0.66, 0.62, 1.08];
+
+/** How large the chapter-number glyph reads while the swarm holds it. */
+const DIGIT_BREATHE = { desktop: 0.96, mobile: 0.74 };
 
 type Opts = {
   canvas: HTMLCanvasElement;
@@ -65,6 +68,8 @@ export class ParticleSystem {
   private pointerTarget = new THREE.Vector2(0, 0);
   private camZ = 18;
   private spread = 0;
+  private midW = 0;
+  private unrot = new THREE.Matrix4();
   private quiet = 0;
   private rtl = false;
   private mouseForce = 0;
@@ -134,6 +139,7 @@ export class ParticleSystem {
     this.pGeo.setAttribute("aFrom", new THREE.BufferAttribute(aFrom, 3));
     this.pGeo.setAttribute("aTo", new THREE.BufferAttribute(aTo, 3));
     this.pGeo.setAttribute("aCore", new THREE.BufferAttribute(new Float32Array(this.forms.core), 3));
+    this.pGeo.setAttribute("aMid", new THREE.BufferAttribute(new Float32Array(this.forms.digits[1]), 3));
     this.pGeo.setAttribute("aScale", new THREE.BufferAttribute(aScale, 1));
     this.pGeo.setAttribute("aSeed", new THREE.BufferAttribute(aSeed, 1));
     this.pGeo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 4);
@@ -156,6 +162,8 @@ export class ParticleSystem {
         uMouseForce: { value: this.mouseForce },
         uPointer: { value: new THREE.Vector2() },
         uPointerR: { value: 2.0 },
+        uMidW: { value: 0 },
+        uUnrot: { value: new THREE.Matrix3() },
         uColorFrom: { value: this.colors[0].clone() },
         uColorTo: { value: this.colors[1].clone() },
         uOpacity: { value: STAGE_OPACITY[0] },
@@ -278,6 +286,10 @@ export class ParticleSystem {
       (pt.array as Float32Array).set(this.forms.points[seg + 1]);
       pf.needsUpdate = true;
       pt.needsUpdate = true;
+      // the glyph the swarm reads out on the way in: the number of the room ahead
+      const pm = this.pGeo.getAttribute("aMid") as THREE.BufferAttribute;
+      (pm.array as Float32Array).set(this.forms.digits[seg + 1]);
+      pm.needsUpdate = true;
 
       const lf = this.lGeo.getAttribute("aFrom") as THREE.BufferAttribute;
       const lt = this.lGeo.getAttribute("aTo") as THREE.BufferAttribute;
@@ -290,7 +302,13 @@ export class ParticleSystem {
     // `frac` is zero for the whole time a chapter owns the screen and only sweeps
     // 0→1 across a handover, so the swarm blows apart *between* rooms and is
     // settled and readable inside them.
-    this.spread = this.reduced ? 0 : Math.pow(Math.sin(clamp(frac, 0, 1) * Math.PI), 0.8);
+    // The middle of the handover is a hold: the veil is at full cover and the
+    // swarm, lifted above it, stands as the next chapter's number. `midW` ramps
+    // in just before that cover lands and out just after it lifts, so the glyph
+    // is crisp for the whole time it is actually in view.
+    const midW = this.reduced ? 0 : smoothstep(clamp((frac - 0.26) / 0.16, 0, 1)) * (1 - smoothstep(clamp((frac - 0.58) / 0.16, 0, 1)));
+    this.midW = midW;
+    this.spread = this.reduced ? 0 : Math.pow(Math.sin(clamp(frac, 0, 1) * Math.PI), 0.8) * (1 - midW);
 
     const mix = smoothstep(clamp((frac - 0.08) / 0.84, 0, 1));
     const cFrom = this.colors[seg];
@@ -305,27 +323,35 @@ export class ParticleSystem {
     const presence = m ? lerp(MOBILE_PRESENCE[seg], MOBILE_PRESENCE[seg + 1], mix) : 1;
     const linePresence = m ? lerp(MOBILE_LINE_PRESENCE[seg], MOBILE_LINE_PRESENCE[seg + 1], mix) : 1;
     pu.uOpacity.value = lerp(STAGE_OPACITY[seg], STAGE_OPACITY[seg + 1], mix) * hush * presence;
-    pu.uBreathe.value = m
+    const stageBreathe = m
       ? lerp(MOBILE_BREATHE[seg], MOBILE_BREATHE[seg + 1], mix)
       : lerp(STAGE_BREATHE[seg], STAGE_BREATHE[seg + 1], mix);
+    pu.uBreathe.value = lerp(stageBreathe, m ? DIGIT_BREATHE.mobile : DIGIT_BREATHE.desktop, midW);
     pu.uSpread.value = this.spread;
+    pu.uMidW.value = midW;
+    // the cursor bubble would punch a hole through the number — it rests while the glyph stands
+    pu.uMouseForce.value = this.mouseForce * (1 - midW);
+    // the glyph must read at full presence, whatever the chapters either side ask for
+    pu.uOpacity.value = lerp(pu.uOpacity.value, 0.95 * hush, midW);
 
     const lu = this.lMat.uniforms;
     lu.uMix.value = mix;
     lu.uColorFrom.value.copy(cFrom);
     lu.uColorTo.value.copy(cTo);
     lu.uOpacity.value =
-      lerp(STAGE_LINE_OPACITY[seg], STAGE_LINE_OPACITY[seg + 1], mix) * hush * linePresence;
+      lerp(STAGE_LINE_OPACITY[seg], STAGE_LINE_OPACITY[seg + 1], mix) * hush * linePresence * (1 - midW);
     lu.uBreathe.value = pu.uBreathe.value;
     lu.uSpread.value = this.spread;
 
     // drift the instrument off-centre so section copy always has clean ground
     const wide = window.innerWidth > 1024;
     const ox = wide ? lerp(STAGE_OFFSET_X[seg], STAGE_OFFSET_X[seg + 1], mix) : 0;
-    this.offsetX = this.rtl ? -ox : ox;
-    this.offsetY = m
-      ? lerp(MOBILE_OFFSET_Y[seg], MOBILE_OFFSET_Y[seg + 1], mix)
-      : lerp(STAGE_OFFSET_Y[seg], STAGE_OFFSET_Y[seg + 1], mix);
+    // …and pull it back to dead centre while it is spelling out the number
+    this.offsetX = (this.rtl ? -ox : ox) * (1 - midW);
+    this.offsetY =
+      (m
+        ? lerp(MOBILE_OFFSET_Y[seg], MOBILE_OFFSET_Y[seg + 1], mix)
+        : lerp(STAGE_OFFSET_Y[seg], STAGE_OFFSET_Y[seg + 1], mix)) * (1 - midW);
   }
 
   update(dtMs: number) {
@@ -371,12 +397,23 @@ export class ParticleSystem {
     const scrollTurn = this.progress * Math.PI * 0.85 * lerp(1, 0.55, contactCalm);
     this.group.rotation.y = spinAmount + scrollTurn + this.pointer.x * 0.18;
     this.group.rotation.x = Math.sin(this.time * 0.00013) * 0.1 - this.pointer.y * 0.12;
+    // the glyph is authored flat in XY; feed the shader the inverse of the
+    // group's turn so it stays square to the lens while the swarm holds it
+    if (this.midW > 0.0005) {
+      this.unrot.makeRotationFromEuler(this.group.rotation).invert();
+      this.pMat.uniforms.uUnrot.value.setFromMatrix4(this.unrot);
+    }
 
     const ease = clamp(dt / 700, 0, 1);
     this.group.position.x += (this.offsetX * 2.6 - this.group.position.x) * ease;
     this.group.position.y += (this.offsetY * 2.6 - this.group.position.y) * ease;
 
     this.renderer.render(this.scene, this.camera);
+  }
+
+  /** 0..1 — how fully the swarm is currently standing as a chapter number. */
+  glyphWeight() {
+    return this.midW;
   }
 
   /** DEV-only snapshot for verifying the instrument from the console. */
@@ -386,6 +423,7 @@ export class ParticleSystem {
       progress: this.progress,
       stage: this.stage,
       spread: this.spread,
+      midW: this.midW,
       quiet: this.quiet,
       rtl: this.rtl,
       camZ: this.camZ,
