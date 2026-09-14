@@ -62,11 +62,11 @@ export default function ChapterVeil() {
       }
 
       // the plate travels one full screen height, +100% → 0 → −100%, with a
-      // hold at full cover in the middle so the number gets a beat to land
+      // long hold at full cover — half the handover — while the swarm spells the number
       const ss = (v: number) => v * v * (3 - 2 * v);
       let y: number;
-      if (p < 0.42) y = (1 - ss(p / 0.42)) * 100;
-      else if (p > 0.58) y = -ss((p - 0.58) / 0.42) * 100;
+      if (p < 0.25) y = (1 - ss(p / 0.25)) * 100;
+      else if (p > 0.75) y = -ss((p - 0.75) / 0.25) * 100;
       else y = 0;
       if (plateRef.current) plateRef.current.style.transform = "translate3d(0," + y + "%,0)";
 
@@ -85,7 +85,7 @@ export default function ChapterVeil() {
       }
 
       // the readout is only legible around full cover
-      const cover = Math.max(0, 1 - Math.abs(p - 0.5) / 0.3);
+      const cover = Math.max(0, 1 - Math.abs(p - 0.5) / 0.38);
       const k = ss(cover);
       if (haloRef.current) haloRef.current.style.opacity = String(k);
       if (labelRef.current) {

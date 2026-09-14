@@ -31,15 +31,17 @@ export function measureStages() {
 
   // Every chapter has a seam block in front of it (ChapterBreak, tagged with
   // the chapter's id). The handover begins only once the chapter before has
-  // been read to its end — the moment the seam's top edge reaches the bottom
-  // of the screen — and finishes when the next chapter's own top has risen a
+  // been read to its end — the seam's top edge is already well up the
+  // screen — and finishes when the next chapter's own top has risen a
   // third of the way up. The seam is tall on purpose: that empty run is the
   // room the veil and the chapter number get to play out in.
   entry = tops.map((top, i) => (i === 0 ? 0 : Math.max(0, top - vh * 0.35)));
   handover = STAGES.map((id, i) => {
     if (i === 0) return 0;
     const seam = document.querySelector<HTMLElement>('[data-seam="' + id + '"]');
-    const start = seam ? seam.offsetTop - vh : entry[i] - vh;
+    // …and not the instant the last line leaves: the seam itself scrolls up
+    // almost half a screen first, so "the end" is unmistakably reached
+    const start = seam ? seam.offsetTop - vh * 0.55 : entry[i] - vh;
     return Math.max(0, start);
   });
   // keep everything strictly increasing even if a section is unexpectedly short

@@ -64,7 +64,7 @@ export default function ChapterBreak({
     <div
       ref={wrapRef}
       data-seam={seam}
-      className="relative flex min-h-[72vh] items-center overflow-hidden py-16 md:min-h-[78vh] md:py-24"
+      className="relative flex min-h-[100vh] items-center overflow-hidden py-16 md:min-h-[108vh] md:py-24"
       aria-hidden={false}
     >
       {/* the ghost numeral */}

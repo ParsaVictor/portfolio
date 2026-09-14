@@ -9,9 +9,9 @@ const STAGE_COUNT = 5; // hero · vision · neural · web · contact
 const STAGE_OPACITY = [0.8, 0.72, 0.78, 0.72, 0.92];
 const STAGE_LINE_OPACITY = [0.34, 0.3, 0.46, 0.34, 0.55];
 /** Hero fills the frame; the working sections keep the form compact. */
-const STAGE_BREATHE = [1.32, 0.94, 0.98, 0.94, 1.24];
+const STAGE_BREATHE = [1.18, 0.8, 0.72, 0.8, 1.1];
 /** Which side of the viewport the instrument owns, so copy always gets the other. */
-const STAGE_OFFSET_X = [0.1, -1.08, 1.08, -1.08, 0];
+const STAGE_OFFSET_X = [0.1, -1.38, 1.15, -1.15, 0];
 const STAGE_OFFSET_Y = [0, -0.06, 0.06, -0.06, 0];
 
 /**
@@ -305,8 +305,8 @@ export class ParticleSystem {
     // The middle of the handover is a hold: the veil is at full cover and the
     // swarm, lifted above it, stands as the next chapter's number. `midW` ramps
     // in just before that cover lands and out just after it lifts, so the glyph
-    // is crisp for the whole time it is actually in view.
-    const midW = this.reduced ? 0 : smoothstep(clamp((frac - 0.26) / 0.16, 0, 1)) * (1 - smoothstep(clamp((frac - 0.58) / 0.16, 0, 1)));
+    // stands for most of the handover, not just a blink at the middle.
+    const midW = this.reduced ? 0 : smoothstep(clamp((frac - 0.08) / 0.17, 0, 1)) * (1 - smoothstep(clamp((frac - 0.75) / 0.17, 0, 1)));
     this.midW = midW;
     this.spread = this.reduced ? 0 : Math.pow(Math.sin(clamp(frac, 0, 1) * Math.PI), 0.8) * (1 - midW);
 
