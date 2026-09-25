@@ -26,6 +26,9 @@ export default function AboutStage() {
   const { t, lang } = useLang();
   const stageRef = useHandover<HTMLDivElement>(0);
   const quietRef = useQuietZone<HTMLDivElement>();
+  // the method is five cards of prose — the swarm drifting behind them only
+  // costs legibility, so it steps back here too
+  const methodQuietRef = useQuietZone<HTMLDivElement>();
 
   return (
     <section id="about" className="relative py-16 md:py-20 lg:py-24">
@@ -93,7 +96,7 @@ export default function AboutStage() {
         </div>
 
         {/* ──────────────────────── ACT III · the method ──────────────── */}
-        <div className="mx-auto mt-16 max-w-7xl px-6 md:mt-20 lg:px-10">
+        <div ref={methodQuietRef} className="mx-auto mt-16 max-w-7xl px-6 md:mt-20 lg:px-10">
           <ActMark index="III" label={t.about.methodKicker} accent={ACCENT} />
           <Reveal variant="clip" duration={900} delay={80}>
             <h3 className="mt-4 max-w-2xl text-[clamp(1.4rem,3.6vw,2.25rem)] font-bold leading-[1.2] text-bone">

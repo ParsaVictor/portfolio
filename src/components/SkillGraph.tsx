@@ -1,16 +1,48 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ArrowUpRight, X } from "lucide-react";
+import { useLang } from "../i18n/LangProvider";
+import { groups, type Project } from "../data/projects";
+import { openProject } from "../state/projectModal";
+import { digits } from "../lib/num";
 
-type Branch = { key: string; label: string; color: string; leaves: string[] };
+type Branch = { key: string; label: string; short: string; color: string; leaves: string[] };
 
 /** Grounded in what the repos actually use — no aspirational entries. */
 const BRANCHES: Branch[] = [
-  { key: "vision", label: "VISION", color: "#35e0ff", leaves: ["YOLO", "OpenCV", "ByteTrack", "MediaPipe"] },
-  { key: "deep", label: "DEEP LEARNING", color: "#7cc4ff", leaves: ["PyTorch", "CNN", "Transfer Learning"] },
-  { key: "ml", label: "MACHINE LEARNING", color: "#a894ff", leaves: ["scikit-learn", "Random Forest", "Explainable AI"] },
-  { key: "data", label: "DATA", color: "#ffb454", leaves: ["NumPy", "Pandas", "SQL", "Matplotlib"] },
-  { key: "web", label: "WEB", color: "#ff6a5e", leaves: ["React", "TypeScript", "Three.js", "Next.js"] },
-  { key: "infra", label: "INFRA", color: "#8fd67a", leaves: ["Docker", "Git", "MLOps"] },
+  { key: "vision", label: "VISION", short: "VISION", color: "#35e0ff", leaves: ["YOLO", "OpenCV", "ByteTrack", "MediaPipe"] },
+  { key: "deep", label: "DEEP LEARNING", short: "DEEP", color: "#7cc4ff", leaves: ["PyTorch", "CNN", "Transfer Learning", "TensorRT"] },
+  { key: "ml", label: "MACHINE LEARNING", short: "ML", color: "#a894ff", leaves: ["scikit-learn", "Random Forest", "Explainable AI"] },
+  { key: "data", label: "DATA", short: "DATA", color: "#ffb454", leaves: ["NumPy", "Pandas", "SQL", "Matplotlib"] },
+  { key: "web", label: "WEB", short: "WEB", color: "#ff6a5e", leaves: ["React", "TypeScript", "Three.js", "Next.js"] },
+  { key: "infra", label: "INFRA", short: "INFRA", color: "#8fd67a", leaves: ["Docker", "Git", "MLOps"] },
 ];
+
+/**
+ * Where each tool demonstrably shows up — project ids from data/projects.ts,
+ * read off their tags and write-ups. "site" is this portfolio itself. A tool
+ * with no entry is everyday toolkit and says so, rather than inventing a link.
+ */
+const EVIDENCE: Record<string, string[]> = {
+  YOLO: ["ppe-sentinel", "pelakx", "fireguard", "pcb-detect"],
+  OpenCV: ["pelakx", "pcb-classify"],
+  ByteTrack: ["thief", "ppe-sentinel"],
+  PyTorch: ["pcb-detect", "ai-template"],
+  CNN: ["pcb-detect", "fireguard", "pelakx"],
+  "Transfer Learning": ["pcb-detect"],
+  TensorRT: ["ppe-sentinel"],
+  "scikit-learn": ["pcb-classify"],
+  "Random Forest": ["pcb-classify"],
+  "Explainable AI": ["pcb-classify"],
+  NumPy: ["pointcloud", "pcb-classify"],
+  React: ["melkai", "site"],
+  TypeScript: ["b2b", "site"],
+  "Three.js": ["site"],
+  "Next.js": ["melkai"],
+  MLOps: ["ai-template"],
+};
+
+const ALL_PROJECTS: Project[] = [...groups.cv, ...groups.data, ...groups.web];
+const byId = (id: string) => ALL_PROJECTS.find((p) => p.id === id);
 
 type Node = {
   id: string;
@@ -21,6 +53,7 @@ type Node = {
   color: string;
   kind: "hub" | "branch" | "leaf";
   parent: number | null;
+  branch: number; // index into BRANCHES, -1 for the hub
   seed: number;
 };
 
@@ -30,26 +63,34 @@ type Mote = { edge: number; t: number; speed: number; size: number };
 const MOTES_PER_EDGE = 4;
 /** Seconds for one pulse to travel hub → branch → leaf. */
 const PULSE_PERIOD = 5200;
+/** Below this box width the graph drops its tool labels and the panel leads. */
+const COMPACT_W = 640;
 
 /**
  * The stack as a living graph.
  *
  * Layout is a radial tree (hub → discipline → tool) computed from the measured
  * box. Links, nodes and a field of motes that ride the links are painted to
- * canvas; the labels stay real DOM text over the top, so they remain selectable
- * and sharp at any pixel ratio instead of being baked into the bitmap.
+ * canvas; the labels are real buttons over the top, so they stay sharp,
+ * selectable, focusable and tappable.
  *
- * The whole graph floats — every node drifts on its own seeded phase and the
- * cloud leans toward the pointer. Bringing the cursor near a node traces its
- * path to the centre and the motes on that path surge.
+ * Hover (or keyboard focus) traces a node's path to the centre; a click or tap
+ * pins it, and the read-out underneath answers the question the graph raises —
+ * where does this actually show up? — with the projects behind it. On a phone
+ * the graph keeps only its disciplines as words and the read-out does the rest.
  */
 export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
+  const { t, lang } = useLang();
+  const g = t.about.graph;
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [nodes, setNodes] = useState<Node[]>([]);
-  const [active, setActive] = useState<number | null>(null);
+  const [hover, setHover] = useState<number | null>(null);
+  const [pinned, setPinned] = useState<number | null>(null);
+  const compact = size.w > 0 && size.w < COMPACT_W;
 
+  const active = hover ?? pinned;
   const activeRef = useRef<number | null>(null);
   activeRef.current = active;
   const lean = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
@@ -63,7 +104,7 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
     const read = () => {
       const w = el.clientWidth;
       const h = el.clientHeight;
-      if (w > 0 && h > 0) setSize({ w, h });
+      if (w > 0 && h > 0) setSize((s) => (s.w === w && s.h === h ? s : { w, h }));
     };
     read();
     const ro = new ResizeObserver(read);
@@ -81,28 +122,29 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
   useEffect(() => {
     const { w, h } = size;
     if (!w || !h) return;
+    const small = w < COMPACT_W;
 
     // Room reserved for the labels, which sit outside the node they belong to.
     // The box is usually far wider than it is tall, so the ring is an ellipse
     // rather than a circle — that is what keeps the top and bottom rows inside.
-    const padX = Math.min(96, w * 0.14);
-    const padY = Math.min(64, h * 0.14);
+    const padX = small ? Math.min(52, w * 0.15) : Math.min(96, w * 0.14);
+    const padY = small ? 34 : Math.min(64, h * 0.14);
     const usableW = Math.max(60, w / 2 - padX);
     const usableH = Math.max(50, h / 2 - padY);
 
     const cx = w / 2;
     const cy = h / 2;
-    const rbx = usableW * 0.5;
-    const rby = usableH * 0.52;
-    const rlx = usableW * 0.5;
-    const rly = usableH * 0.5;
+    const rbx = usableW * (small ? 0.6 : 0.5);
+    const rby = usableH * (small ? 0.5 : 0.52);
+    const rlx = usableW * (small ? 0.42 : 0.5);
+    const rly = usableH * (small ? 0.4 : 0.5);
 
     const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
     const inX = (v: number) => clamp(v, padX, w - padX);
     const inY = (v: number) => clamp(v, padY, h - padY);
 
     const next: Node[] = [
-      { id: "hub", label: hub, x: cx, y: cy, r: 10, color: "#f2ece1", kind: "hub", parent: null, seed: 0 },
+      { id: "hub", label: hub, x: cx, y: cy, r: small ? 7 : 10, color: "#f2ece1", kind: "hub", parent: null, branch: -1, seed: 0 },
     ];
 
     const sector = (Math.PI * 2) / BRANCHES.length;
@@ -113,49 +155,67 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
       const by = inY(cy + Math.sin(a) * rby);
       const bIndex = next.length;
       next.push({
-        id: b.key, label: b.label, x: bx, y: by, r: 6,
-        color: b.color, kind: "branch", parent: 0, seed: bi * 1.7,
+        id: b.key, label: small ? b.short : b.label, x: bx, y: by, r: small ? 4.5 : 6,
+        color: b.color, kind: "branch", parent: 0, branch: bi, seed: bi * 1.7,
       });
 
       // leaves fan across most of their own sector — wide enough to breathe,
       // still bounded so neighbouring disciplines never interleave
-      const spread = sector * 0.92;
+      // a branch pointing up or down has the least vertical room for its
+      // tools, so its fan opens wider sideways instead
+      const spread = sector * ((small ? 1.05 : 0.92) + (small ? 0.35 : 0.55) * Math.abs(Math.sin(a)));
       b.leaves.forEach((leaf, li) => {
-        const t = b.leaves.length === 1 ? 0.5 : li / (b.leaves.length - 1);
-        const la = a + (t - 0.5) * spread;
+        const tt = b.leaves.length === 1 ? 0.5 : li / (b.leaves.length - 1);
+        const la = a + (tt - 0.5) * spread;
         next.push({
           id: b.key + "-" + leaf, label: leaf,
           x: inX(bx + Math.cos(la) * rlx),
           y: inY(by + Math.sin(la) * rly),
-          r: 3.2, color: b.color, kind: "leaf", parent: bIndex,
+          r: small ? 2.6 : 3.2, color: b.color, kind: "leaf", parent: bIndex, branch: bi,
           seed: bi * 3.1 + li * 0.9,
         });
       });
     });
 
-    // Relax the leaf labels apart. Their boxes are wide and short, so overlap is
-    // judged per axis and resolved mostly vertically, where there is slack.
-    const movable = next.map((n, i) => (n.kind === "leaf" ? i : -1)).filter((i) => i >= 0);
-    const halfW = (n: Node) => n.label.length * 3.2 + 14;
-    for (let pass = 0; pass < 40; pass++) {
-      let moved = false;
-      for (let a1 = 0; a1 < movable.length; a1++) {
-        for (let b1 = a1 + 1; b1 < movable.length; b1++) {
+    // Relax the leaf labels apart — from each other, and away from the
+    // discipline labels, which hold still. Boxes are wide and short, so overlap
+    // is judged per axis and resolved vertically, where there is slack. Phones
+    // show no tool labels, so there is nothing to untangle there.
+    if (!small) {
+      const halfW = (n: Node) =>
+        n.kind === "branch" ? n.label.length * 4.4 + 10 : n.label.length * 3.2 + 14;
+      const labelY = (n: Node) => n.y + (n.kind === "branch" ? 13 : 10);
+      const movable = next.map((n, i) => (n.kind === "leaf" ? i : -1)).filter((i) => i >= 0);
+      const fixed = next.map((n, i) => (n.kind === "branch" ? i : -1)).filter((i) => i >= 0);
+      for (let pass = 0; pass < 60; pass++) {
+        let moved = false;
+        for (let a1 = 0; a1 < movable.length; a1++) {
           const p = next[movable[a1]];
-          const q = next[movable[b1]];
-          const needX = halfW(p) + halfW(q) + 6;
-          const needY = 30;
-          const dx = p.x - q.x;
-          const dy = p.y - q.y;
-          if (Math.abs(dx) >= needX || Math.abs(dy) >= needY) continue;
-          const push = (needY - Math.abs(dy)) / 2 + 0.5;
-          const dir = dy === 0 ? (p.y < cy ? -1 : 1) : Math.sign(dy);
-          p.y = inY(p.y + dir * push);
-          q.y = inY(q.y - dir * push);
-          moved = true;
+          for (let b1 = a1 + 1; b1 < movable.length; b1++) {
+            const q = next[movable[b1]];
+            const needX = halfW(p) + halfW(q) + 6;
+            const dx = p.x - q.x;
+            const dy = labelY(p) - labelY(q);
+            if (Math.abs(dx) >= needX || Math.abs(dy) >= 30) continue;
+            const push = (30 - Math.abs(dy)) / 2 + 0.5;
+            const dir = dy === 0 ? (p.y < cy ? -1 : 1) : Math.sign(dy);
+            p.y = inY(p.y + dir * push);
+            q.y = inY(q.y - dir * push);
+            moved = true;
+          }
+          for (const fi of fixed) {
+            const q = next[fi];
+            const needX = halfW(p) + halfW(q) + 6;
+            const dx = p.x - q.x;
+            const dy = labelY(p) - labelY(q);
+            if (Math.abs(dx) >= needX || Math.abs(dy) >= 30) continue;
+            const dir = dy === 0 ? (p.y < cy ? -1 : 1) : Math.sign(dy);
+            p.y = inY(p.y + dir * (30 - Math.abs(dy) + 1));
+            moved = true;
+          }
         }
+        if (!moved) break;
       }
-      if (!moved) break;
     }
 
     setNodes(next);
@@ -175,6 +235,31 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
     motes.current = list;
   }, [size, hub]);
 
+  // Opens on the first discipline already pinned: the read-out has something
+  // to say from the start, and the lit branch shows the map is alive.
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (seeded.current || !nodes.length || !size.w) return;
+    seeded.current = true;
+    setPinned(1);
+  }, [nodes, size.w]);
+
+  /** A node's path to the centre, plus — for a discipline — all its tools. */
+  const litFor = useCallback(
+    (a: number | null) => {
+      const lit = new Set<number>();
+      if (a == null || !nodes[a]) return lit;
+      let cur: number | null = a;
+      while (cur != null) {
+        lit.add(cur);
+        cur = nodes[cur].parent;
+      }
+      if (nodes[a].kind === "branch") nodes.forEach((n, i) => n.parent === a && lit.add(i));
+      return lit;
+    },
+    [nodes]
+  );
+
   /* ------------------------------------------------------------ paint */
   const draw = useCallback(
     (time: number, dt: number) => {
@@ -184,7 +269,7 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
 
       const { w, h } = size;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      if (canvas.width !== Math.round(w * dpr)) {
+      if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
         canvas.width = Math.round(w * dpr);
         canvas.height = Math.round(h * dpr);
       }
@@ -211,15 +296,8 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
       const py = (n: Node) =>
         n.y + Math.cos(time * 0.00041 + n.seed * 1.3) * 5 * depth(n) + lean.current.y * 12 * depth(n);
 
-      const lit = new Set<number>();
-      const a = activeRef.current;
-      if (a != null) {
-        let cur: number | null = a;
-        while (cur != null) {
-          lit.add(cur);
-          cur = nodes[cur].parent;
-        }
-      }
+      const lit = litFor(activeRef.current);
+      const dimOthers = lit.size > 0;
 
       /* links */
       nodes.forEach((n, i) => {
@@ -232,7 +310,7 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
         const q = Math.max(charge(n), charge(p));
         ctx.strokeStyle = on
           ? n.color
-          : "rgba(242,236,225," + (0.09 + q * 0.16).toFixed(3) + ")";
+          : "rgba(242,236,225," + ((0.09 + q * 0.16) * (dimOthers ? 0.6 : 1)).toFixed(3) + ")";
         ctx.lineWidth = on ? 1.5 : 0.9 + q * 0.5;
         ctx.stroke();
       });
@@ -250,7 +328,7 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
         const x = px(p) + (px(n) - px(p)) * mo.t;
         const y = py(p) + (py(n) - py(p)) * mo.t;
         // fade in and out at the ends so they appear to enter and leave the wire
-        const fade = Math.sin(mo.t * Math.PI);
+        const fade = Math.sin(mo.t * Math.PI) * (on || !dimOthers ? 1 : 0.5);
         const r = mo.size * (on ? 2.1 : 1.25);
 
         ctx.beginPath();
@@ -278,9 +356,9 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
 
         if (n.kind === "hub") {
           for (let k = 0; k < 2; k++) {
-            const pulse = ((time * 0.00022 + k * 0.5) % 1);
+            const pulse = (time * 0.00022 + k * 0.5) % 1;
             ctx.beginPath();
-            ctx.arc(x, y, n.r + 6 + pulse * 46, 0, Math.PI * 2);
+            ctx.arc(x, y, n.r + 6 + pulse * (w < COMPACT_W ? 28 : 46), 0, Math.PI * 2);
             ctx.strokeStyle = "rgba(242,236,225," + (0.18 * (1 - pulse)).toFixed(3) + ")";
             ctx.lineWidth = 1;
             ctx.stroke();
@@ -291,7 +369,7 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
         if (q > 0.02 || on) {
           const halo = Math.max(q, on ? 0.85 : 0);
           ctx.beginPath();
-          ctx.arc(x, y, n.r * (2.6 + halo * 2.4), 0, Math.PI * 2);
+          ctx.arc(x, y, n.r * (2.6 + halo * (w < COMPACT_W ? 1.4 : 2.4)), 0, Math.PI * 2);
           ctx.fillStyle = n.color;
           ctx.globalAlpha = halo * 0.16;
           ctx.fill();
@@ -306,7 +384,7 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
         ctx.globalAlpha = 1;
       });
     },
-    [nodes, size]
+    [nodes, size, litFor]
   );
 
   useEffect(() => {
@@ -314,106 +392,344 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
     draw(0, 16);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let raf = 0;
-    const loop = (t: number) => {
+    const loop = (tm: number) => {
       raf = requestAnimationFrame(loop);
       if (document.hidden) return;
-      const dt = lastT.current ? Math.min(50, t - lastT.current) : 16;
-      lastT.current = t;
-      draw(t, dt);
+      const dt = lastT.current ? Math.min(50, tm - lastT.current) : 16;
+      lastT.current = tm;
+      draw(tm, dt);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, [draw, nodes.length]);
 
-  /* -------------------------------------------------------- pointer */
+  // reduced motion paints once per change instead of every frame
   useEffect(() => {
-    const el = boxRef.current;
-    if (!el || !nodes.length) return;
-    const onMove = (e: PointerEvent) => {
-      const r = el.getBoundingClientRect();
-      const x = e.clientX - r.left;
-      const y = e.clientY - r.top;
-      lean.current.tx = (x / r.width - 0.5) * 2;
-      lean.current.ty = (y / r.height - 0.5) * 2;
+    if (nodes.length && window.matchMedia("(prefers-reduced-motion: reduce)").matches) draw(0, 16);
+  }, [active, draw, nodes.length]);
 
+  /* -------------------------------------------------------- pointer */
+  const nearest = useCallback(
+    (x: number, y: number, radius: number) => {
       let best: number | null = null;
-      let bestD = 96;
+      let bestD = radius;
       nodes.forEach((n, i) => {
         if (n.kind === "hub") return;
+        if (compact && n.kind === "leaf") return; // unlabelled dots aren't targets
         const d = Math.hypot(n.x - x, n.y - y);
         if (d < bestD) {
           bestD = d;
           best = i;
         }
       });
-      setActive(best);
+      return best;
+    },
+    [nodes, compact]
+  );
+
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el || !nodes.length) return;
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return; // touch has no hover — it taps
+      const r = el.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      lean.current.tx = (x / r.width - 0.5) * 2;
+      lean.current.ty = (y / r.height - 0.5) * 2;
+      setHover(nearest(x, y, 96));
     };
     const onLeave = () => {
-      setActive(null);
+      setHover(null);
       lean.current.tx = 0;
       lean.current.ty = 0;
     };
+    // a click or tap on the canvas pins whatever is near it; on nothing, unpins
+    const onClick = (e: MouseEvent) => {
+      // the labels are buttons with their own handler; this native listener
+      // runs before React sees the click, so it has to step aside for them
+      if ((e.target as Element).closest("button")) return;
+      const r = el.getBoundingClientRect();
+      const hit = nearest(e.clientX - r.left, e.clientY - r.top, compact ? 44 : 96);
+      setPinned((p) => (hit == null || hit === p ? null : hit));
+    };
     el.addEventListener("pointermove", onMove);
     el.addEventListener("pointerleave", onLeave);
+    el.addEventListener("click", onClick);
     return () => {
       el.removeEventListener("pointermove", onMove);
       el.removeEventListener("pointerleave", onLeave);
+      el.removeEventListener("click", onClick);
     };
-  }, [nodes]);
+  }, [nodes, nearest, compact]);
 
+  const pin = (i: number) => setPinned((p) => (p === i ? null : i));
+  const lit = useMemo(() => litFor(active), [litFor, active]);
   const activeNode = active != null ? nodes[active] : null;
+  const toolCount = BRANCHES.reduce((s, b) => s + b.leaves.length, 0);
+  const projectCount = new Set(Object.values(EVIDENCE).flat().filter((id) => id !== "site")).size;
 
+  // Desktop: graph and read-out side by side, so the whole act — the map and
+  // what it means — reads in a single screen instead of a scroll apart.
   return (
-    <div
-      ref={boxRef}
-      className="relative w-full overflow-hidden rounded-3xl"
-      style={{ height: "clamp(480px, 70vh, 720px)" }}
-    >
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 h-full w-full"
-        style={{ width: size.w, height: size.h }}
-        aria-hidden
-      />
+    <div className="lg:grid lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-center lg:gap-10">
+      <div
+        ref={boxRef}
+        className="relative w-full select-none overflow-hidden rounded-3xl"
+        style={{ height: compact ? "clamp(300px, 46svh, 380px)" : "clamp(400px, 60vh, 600px)" }}
+      >
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 h-full w-full"
+          style={{ width: size.w, height: size.h }}
+          aria-hidden
+        />
 
-      {nodes.map((n, i) => {
-        const on = active != null && (i === active || nodes[active]?.parent === i);
-        if (n.kind === "hub") {
+        {nodes.map((n, i) => {
+          if (n.kind === "hub") {
+            return (
+              <span
+                key={n.id}
+                className="pointer-events-none absolute -translate-x-1/2 font-mono text-[10px] font-bold tracking-[0.34em] text-bone ltr"
+                style={{ left: n.x, top: n.y + 22 }}
+              >
+                {n.label}
+              </span>
+            );
+          }
+          if (compact && n.kind === "leaf") return null;
+          const on = lit.has(i);
+          const branch = n.kind === "branch";
           return (
-            <span
+            <button
               key={n.id}
-              className="pointer-events-none absolute -translate-x-1/2 font-mono text-[10px] font-bold tracking-[0.34em] text-bone ltr"
-              style={{ left: n.x, top: n.y + 22 }}
+              type="button"
+              data-cursor-hover
+              onClick={() => pin(i)}
+              onFocus={(e) => e.currentTarget.matches(":focus-visible") && setHover(i)}
+              onBlur={() => setHover(null)}
+              aria-pressed={pinned === i}
+              className="absolute -translate-x-1/2 whitespace-nowrap rounded-md px-1.5 py-0.5 font-mono outline-none transition-colors duration-200 ltr focus-visible:ring-1 focus-visible:ring-bone/50"
+              style={{
+                left: n.x,
+                top: n.y + (branch ? 12 : 8),
+                fontSize: branch ? (compact ? 10.5 : 10) : 10.5,
+                letterSpacing: branch ? (compact ? "0.18em" : "0.28em") : "0.02em",
+                fontWeight: branch ? 700 : 400,
+                color: on
+                  ? n.color
+                  : active != null
+                    ? "rgba(242,236,225,0.34)"
+                    : branch
+                      ? "rgba(242,236,225,0.82)"
+                      : "rgba(242,236,225,0.56)",
+                textShadow: "0 1px 10px rgba(10,9,8,0.9)",
+              }}
             >
               {n.label}
-            </span>
+            </button>
           );
-        }
-        return (
-          <span
-            key={n.id}
-            className="pointer-events-none absolute -translate-x-1/2 whitespace-nowrap font-mono transition-colors duration-200 ltr"
-            style={{
-              left: n.x,
-              top: n.y + (n.kind === "branch" ? 13 : 10),
-              fontSize: n.kind === "branch" ? 10 : 10.5,
-              letterSpacing: n.kind === "branch" ? "0.28em" : "0.02em",
-              fontWeight: n.kind === "branch" ? 700 : 400,
-              color: on ? n.color : n.kind === "branch" ? "rgba(242,236,225,0.82)" : "rgba(242,236,225,0.52)",
-              textShadow: "0 1px 10px rgba(10,9,8,0.9)",
-            }}
-          >
-            {n.label}
-          </span>
-        );
-      })}
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between px-2 pb-1 font-mono text-[9px] uppercase tracking-[0.28em] text-dim ltr">
-        <span style={activeNode ? { color: activeNode.color } : undefined}>
-          {activeNode ? "traced · " + activeNode.label : "move the cursor near a node to trace"}
-        </span>
-        <span>{nodes.length} nodes</span>
+        })}
       </div>
+
+      <ReadOut
+        node={activeNode}
+        pinned={pinned != null && pinned === active}
+        compact={compact}
+        lang={lang}
+        strings={g}
+        summary={{ disciplines: BRANCHES.length, tools: toolCount, projects: projectCount }}
+        onBranch={(bi) => pin(nodes.findIndex((n) => n.kind === "branch" && n.branch === bi))}
+        onTool={(id) => setPinned(nodes.findIndex((n) => n.id === id))}
+        onClear={() => {
+          setPinned(null);
+          setHover(null);
+        }}
+        activeBranch={activeNode ? activeNode.branch : -1}
+        activeId={activeNode?.id ?? null}
+      />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------ read-out */
+
+type GraphStrings = {
+  disciplines: string;
+  tools: string;
+  projects: string;
+  hintPointer: string;
+  hintTouch: string;
+  toolsLabel: string;
+  seenIn: string;
+  toolkit: string;
+  thisSite: string;
+  clear: string;
+};
+
+/**
+ * The legend and the answer. Discipline chips double as the graph's keyboard
+ * and touch controls; the panel beside them says what the selection means —
+ * its tools, and the projects that actually use them.
+ */
+function ReadOut({
+  node,
+  pinned,
+  compact,
+  lang,
+  strings: g,
+  summary,
+  onBranch,
+  onTool,
+  onClear,
+  activeBranch,
+  activeId,
+}: {
+  node: Node | null;
+  pinned: boolean;
+  compact: boolean;
+  lang: "en" | "fa";
+  strings: GraphStrings;
+  summary: { disciplines: number; tools: number; projects: number };
+  onBranch: (bi: number) => void;
+  onTool: (id: string) => void;
+  onClear: () => void;
+  activeBranch: number;
+  activeId: string | null;
+}) {
+  const b = node && node.branch >= 0 ? BRANCHES[node.branch] : null;
+  const leaf = node?.kind === "leaf" ? node.label : null;
+  const ids = leaf
+    ? EVIDENCE[leaf] ?? []
+    : b
+      ? [...new Set(b.leaves.flatMap((l) => EVIDENCE[l] ?? []))]
+      : [];
+
+  return (
+    <div className="mt-4 flex flex-col gap-4 border-t border-bone/10 pt-5 lg:mt-0 lg:border-t-0 lg:pt-0">
+      {/* the legend — six chips, one per discipline */}
+      <div dir="ltr" className="grid grid-cols-3 content-start gap-2 lg:grid-cols-2" role="group" aria-label="disciplines">
+        {BRANCHES.map((br, bi) => {
+          const on = activeBranch === bi;
+          return (
+            <button
+              key={br.key}
+              type="button"
+              data-cursor-hover
+              onClick={() => onBranch(bi)}
+              aria-pressed={on}
+              className="flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 font-mono text-[10.5px] tracking-[0.12em] transition-colors duration-200"
+              style={{
+                borderColor: on ? br.color : "rgba(242,236,225,0.12)",
+                background: on ? "color-mix(in oklab, " + br.color + " 14%, transparent)" : "rgba(10,9,8,0.5)",
+                color: on ? br.color : "rgba(242,236,225,0.78)",
+              }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: br.color }} />
+              {compact ? br.short : br.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* the answer */}
+      <div aria-live="polite" className="min-h-[6.5rem] rounded-2xl border lg:min-h-[17rem] border-bone/10 bg-ink/70 p-4 backdrop-blur-md sm:p-5">
+        {!b ? (
+          <>
+            <p className="font-mono text-[11px] tracking-[0.12em] text-bone/80 ltr">
+              <span className="text-bone">{digits(summary.disciplines, lang)}</span> {g.disciplines} ·{" "}
+              <span className="text-bone">{digits(summary.tools, lang)}</span> {g.tools} ·{" "}
+              <span className="text-bone">{digits(summary.projects, lang)}</span> {g.projects}
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="flex items-start justify-between gap-3">
+              <div dir="ltr" className="flex min-w-0 flex-wrap items-center gap-x-2 font-mono text-[11px] tracking-[0.2em]">
+                <span style={{ color: b.color }} className="font-bold">
+                  {b.label}
+                </span>
+                {leaf && (
+                  <>
+                    <span className="text-dim">›</span>
+                    <span className="tracking-[0.04em] text-bone">{leaf}</span>
+                  </>
+                )}
+              </div>
+              {pinned && (
+                <button
+                  type="button"
+                  onClick={onClear}
+                  aria-label={g.clear}
+                  className="-m-1.5 grid h-8 w-8 shrink-0 place-items-center rounded-full text-dim transition-colors hover:text-bone"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* the siblings stay listed with the pinned one lit, so moving from
+                tool to tool never means going back up to the discipline */}
+            <div className="mt-3">
+              <div className={"font-mono text-dim " + (lang === "fa" ? "text-[11px]" : "text-[9.5px] tracking-[0.28em]")}>{g.toolsLabel}</div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {b.leaves.map((l) => (
+                  <button
+                    key={l}
+                    type="button"
+                    data-cursor-hover
+                    onClick={() => onTool(b.key + "-" + l)}
+                    className="min-h-8 rounded-full border border-bone/12 px-2.5 py-1 font-mono text-[11px] text-bone/85 transition-colors hover:text-bone"
+                    style={activeId === b.key + "-" + l ? { borderColor: b.color, color: b.color } : undefined}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className={"font-mono text-dim " + (lang === "fa" ? "text-[11px]" : "text-[9.5px] tracking-[0.28em]")}>{g.seenIn}</div>
+              {ids.length ? (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {ids.map((id) => {
+                    if (id === "site") {
+                      return (
+                        <span
+                          key={id}
+                          className="rounded-full border border-dashed border-bone/20 px-2.5 py-1 text-[12px] text-bone/75"
+                        >
+                          {g.thisSite}
+                        </span>
+                      );
+                    }
+                    const p = byId(id);
+                    if (!p) return null;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        data-cursor-hover
+                        onClick={() => openProject(p)}
+                        className="group/p flex min-h-8 items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] text-bone/90 transition-colors hover:text-bone ltr"
+                        style={{ borderColor: "color-mix(in oklab, " + p.accent + " 45%, transparent)" }}
+                      >
+                        {p.title}
+                        <ArrowUpRight size={12} className="opacity-60 transition-opacity group-hover/p:opacity-100" />
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-2 text-[13.5px] leading-6 text-bone/65">{g.toolkit}</p>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* how to use it — kept out of the panel so it survives a selection */}
+      <p className="text-[12.5px] leading-6 text-dim">{compact ? g.hintTouch : g.hintPointer}</p>
     </div>
   );
 }

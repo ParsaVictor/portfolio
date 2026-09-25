@@ -105,9 +105,11 @@ export default function Navbar() {
           </div>
 
           <div className="relative z-10 flex items-center gap-3 md:hidden">
+            {/* a real thumb-sized target — the pill reads small, the hit area isn't */}
             <button
               onClick={toggle}
-              className="rounded-full border border-bone/20 px-2.5 py-1 font-mono text-[10px] text-bone/80"
+              aria-label={lang === "en" ? "فارسی" : "English"}
+              className="grid h-10 min-w-10 place-items-center rounded-full border border-bone/20 px-3 font-mono text-[11px] text-bone/80"
             >
               {lang === "en" ? "FA" : "EN"}
             </button>

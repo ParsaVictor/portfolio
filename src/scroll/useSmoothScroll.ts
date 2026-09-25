@@ -22,6 +22,12 @@ export function scrollToId(id: string) {
   else el.scrollIntoView({ behavior: "smooth" });
 }
 
+/** Glide to an absolute page offset — for controls that drive a scrubbed stage. */
+export function scrollToY(y: number, duration = 1.1) {
+  if (lenis) lenis.scrollTo(y, { duration });
+  else window.scrollTo({ top: y, behavior: "smooth" });
+}
+
 /** Lenis smooth-scroll wired into GSAP ScrollTrigger + a global progress store. */
 export function useSmoothScroll(enabled = true) {
   useEffect(() => {

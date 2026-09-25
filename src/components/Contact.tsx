@@ -64,9 +64,10 @@ export default function Contact() {
         </Reveal>
 
         <Reveal variant="up" duration={850} delay={180}>
-          <p className="mx-auto mt-6 max-w-xl text-[16px] leading-8 text-bone/85 sm:text-base">
-            {t.contact.desc}
-          </p>
+          {/* the ring is centred on this copy — a pool of dark keeps it legible */}
+          <div className="copy-plate mx-auto mt-6 max-w-xl">
+            <p className="text-[16px] leading-8 text-bone/85 sm:text-base">{t.contact.desc}</p>
+          </div>
         </Reveal>
 
         <Reveal variant="up" duration={850} delay={280}>

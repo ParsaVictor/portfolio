@@ -69,6 +69,12 @@ body {
   }
 }
 
+/* one keyboard ring for the whole site — shown for keys, never for clicks */
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid rgba(53, 224, 255, 0.75);
+  outline-offset: 3px;
+}
+
 @keyframes mpk-bob {
   0%,
   100% {

@@ -23,7 +23,8 @@ const STAGE_OFFSET_Y = [0, -0.06, 0.06, -0.06, 0];
  */
 const MOBILE_OFFSET_Y = [0, 0.82, 0.82, 0.82, 0.05];
 const MOBILE_PRESENCE = [1, 0.5, 0.55, 0.5, 0.95];
-const MOBILE_LINE_PRESENCE = [1, 0.3, 0.42, 0.3, 0.9];
+// the lattice lines are what cross body copy on a phone — kept faint there
+const MOBILE_LINE_PRESENCE = [1, 0.22, 0.26, 0.22, 0.9];
 const MOBILE_BREATHE = [1.18, 0.62, 0.66, 0.62, 1.08];
 
 /** How large the chapter-number glyph reads while the swarm holds it. */

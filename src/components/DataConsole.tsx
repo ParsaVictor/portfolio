@@ -44,8 +44,10 @@ export default function DataConsole() {
           </div>
         </Reveal>
 
-        {/* ── band 3 · the work ───────────────────────────────────────── */}
-        <div className="mt-14 border-t border-bone/10">
+        {/* ── band 3 · the work — kept to the copy side on desktop, so the
+            lattice holding the right of the frame never runs through a
+            description ─────────────────────────────────────────────────── */}
+        <div className="mt-14 border-t border-bone/10 lg:max-w-[64%]">
           {dataProjects.map((p, i) => (
             <FocusRow
               key={p.id}
@@ -115,7 +117,7 @@ function FocusRow({
         e.preventDefault();
         openProject(project);
       }}
-      className="group relative grid cursor-pointer grid-cols-1 items-center gap-5 border-b border-bone/10 py-6 sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)] sm:gap-7 sm:py-8"
+      className="group relative grid cursor-pointer grid-cols-1 items-center gap-5 border-b border-bone/10 py-6 ps-4 sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)] sm:gap-7 sm:py-8 sm:ps-0"
       style={{
         ["--focus" as string]: "0.35",
         opacity: "calc(0.62 + var(--focus) * 0.38)",

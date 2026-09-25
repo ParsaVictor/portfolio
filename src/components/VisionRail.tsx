@@ -11,6 +11,7 @@ import { useScrub } from "../scroll/useScrub";
 import { useHandover } from "../scroll/useHandover";
 import { clamp } from "../lib/num";
 import { openProject, shouldOpenInPage } from "../state/projectModal";
+import { scrollToY } from "../scroll/useSmoothScroll";
 import { digits } from "../lib/num";
 
 const ACCENT = STAGE_COLORS.cv;
@@ -47,10 +48,12 @@ export default function VisionRail() {
       if (!el) continue;
       const d = i - pos; // signed distance from the focus slot
       const ad = Math.abs(d);
-      // translate % is of the unscaled box, so the spacing shrinks with k too
+      // translate % is of the unscaled box, so the spacing shrinks with k too.
+      // Neighbours sit well back (0.86) so the card arriving in the slot
+      // visibly grows into it — the focused project is the big one.
       el.style.transform =
-        "translate3d(" + d * 74 * k + "%, " + ad * 2.4 + "%, " + -ad * 230 * k + "px) " +
-        "rotateY(" + -d * 24 + "deg) scale(" + k * (1 - Math.min(ad, 3) * 0.08) + ")";
+        "translate3d(" + d * 70 * k + "%, " + ad * 2.4 + "%, " + -ad * 250 * k + "px) " +
+        "rotateY(" + -d * 24 + "deg) scale(" + k * (1 - Math.min(ad, 3) * 0.14) + ")";
       el.style.opacity = String(clamp(1 - ad * 0.34, 0, 1));
       el.style.zIndex = String(100 - Math.round(ad * 10));
       el.style.pointerEvents = ad < 0.5 ? "auto" : "none";
@@ -62,6 +65,19 @@ export default function VisionRail() {
   }, []);
 
   const wrapRef = useScrub(onScrub);
+
+  // The stage is scroll-driven, so jumping to a project means scrolling to
+  // the point in the spacer where that card owns the slot.
+  const jumpTo = useCallback(
+    (i: number) => {
+      const wrap = wrapRef.current;
+      if (!wrap) return;
+      const top = wrap.getBoundingClientRect().top + window.scrollY;
+      const travel = wrap.offsetHeight - window.innerHeight;
+      scrollToY(top + (clamp(i, 0, N - 1) / (N - 1)) * travel);
+    },
+    [wrapRef]
+  );
   const stageRef = useHandover<HTMLDivElement>(1);
 
   // Re-fit whenever the room or a card's height changes — viewport resize,
@@ -297,7 +313,7 @@ export default function VisionRail() {
               accent={ACCENT}
             />
 
-            <div className="flex h-[calc(100vh-7rem)] max-h-[860px] flex-col justify-center">
+            <div className="flex h-[calc(100vh-5.5rem)] max-h-[940px] flex-col justify-center">
               {/* header + live read-out share one compact band */}
               <div className="flex shrink-0 items-end justify-between gap-8 border-b border-bone/10 pb-6 [@media(max-height:820px)]:pb-4">
                 <div className="copy-plate min-w-0">
@@ -333,8 +349,16 @@ export default function VisionRail() {
               <div
                 ref={arcRef}
                 dir="ltr"
-                className="relative mt-6 min-h-0 flex-1 max-h-[60vh] [@media(max-height:820px)]:mt-4"
+                className="relative mt-6 min-h-0 flex-1 max-h-[66vh] [@media(max-height:820px)]:mt-4"
               >
+                {/* ambient light in the focused project's own colour — the
+                    card sits in a glow of itself, and the glow changes hue
+                    as the next project takes the slot */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute left-1/2 top-1/2 h-[78%] w-[52%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.16] blur-[90px]"
+                  style={{ background: current.accent, transition: "background-color 700ms ease" }}
+                />
                 {/* the paint layer: a little taller than the arc so the focused
                     card's glow and shadow aren't sheared off, and faded at the
                     column's sides so an off-focus card dissolves at the edge —
@@ -349,7 +373,7 @@ export default function VisionRail() {
                       ref={(el) => {
                         cardRefs.current[i] = el;
                       }}
-                      className="absolute left-1/2 top-1/2 w-[min(30vw,440px)] -translate-x-1/2 -translate-y-1/2 will-change-transform"
+                      className="absolute left-1/2 top-1/2 w-[min(38vw,560px)] -translate-x-1/2 -translate-y-1/2 will-change-transform"
                       style={{ transition: "opacity 200ms linear" }}
                     >
                       <VisionCard
@@ -363,6 +387,36 @@ export default function VisionRail() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* every project, one tap away — the scroll still does the moving */}
+              <div dir="ltr" className="mt-3 flex shrink-0 items-center justify-center gap-1 [@media(max-height:820px)]:mt-1">
+                {cvProjects.map((p, i) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    data-cursor-hover
+                    onClick={() => jumpTo(i)}
+                    aria-label={p.title}
+                    aria-current={i === active}
+                    title={p.title}
+                    className="group/tick flex items-center gap-2 px-1.5 py-2"
+                  >
+                    <span
+                      className="font-mono text-[10px] tabular-nums transition-colors duration-300"
+                      style={{ color: i === active ? p.accent : "rgba(242,236,225,0.35)" }}
+                    >
+                      {digits(String(i + 1).padStart(2, "0"), lang)}
+                    </span>
+                    <span
+                      className="h-[3px] rounded-full transition-all duration-500 group-hover/tick:bg-bone/50"
+                      style={{
+                        width: i === active ? 30 : 10,
+                        background: i === active ? p.accent : "rgba(242,236,225,0.18)",
+                      }}
+                    />
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -424,6 +478,7 @@ export function StageCopy({
           className={
             "mt-5 text-[16px] leading-8 text-bone/85 " +
             (centered ? "mx-auto max-w-2xl" : "max-w-md") +
+            (compact ? " lg:max-w-xl" : "") +
             (compact
               ? " [@media(max-height:820px)]:mt-3 [@media(max-height:820px)]:max-w-xl [@media(max-height:820px)]:text-[15px] [@media(max-height:820px)]:leading-7"
               : "")
@@ -543,8 +598,10 @@ function VisionCard({
       <div
         data-media
         className={
-          "relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-t-2xl bg-black" +
-          (focus ? " [@media(max-height:820px)]:aspect-[16/9]" : "")
+          "relative w-full shrink-0 overflow-hidden rounded-t-2xl bg-black " +
+          // the desktop card is height-bound, so its still runs a touch wider
+          // — more of the card's height goes to width, and the card gets bigger
+          (focus ? "aspect-[16/9]" : "aspect-[16/10]")
         }
       >
         {project.image ? (
@@ -604,26 +661,31 @@ function VisionCard({
           (focus ? " [@media(max-height:820px)]:p-4 [&_p]:[@media(max-height:820px)]:line-clamp-2" : "")
         }
       >
-        <h3 className="text-lg font-bold text-bone sm:text-xl ltr">{project.title}</h3>
+        <h3 className={"font-bold text-bone ltr " + (focus ? "text-xl lg:text-2xl" : "text-lg sm:text-xl")}>
+          {project.title}
+        </h3>
         <p className="mt-2.5 line-clamp-3 text-[14px] leading-6 text-bone/85">
           {desc(project, lang)}
         </p>
-        <div className="mt-3.5 flex flex-wrap gap-1.5">
-          {project.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full border border-bone/10 px-2.5 py-1 font-mono text-[10px] text-bone/85 ltr"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-        <div
-          className="mt-4 flex items-center gap-1.5 text-xs font-semibold"
-          style={{ color: project.accent }}
-        >
-          <span>{view}</span>
-          <ArrowUpRight size={14} />
+        {/* desktop: tags and the call to action share a row */}
+        <div className={focus ? "mt-3.5 flex items-center justify-between gap-3" : ""}>
+          <div className={"flex flex-wrap gap-1.5" + (focus ? " min-w-0" : " mt-3.5")}>
+            {project.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-bone/10 px-2.5 py-1 font-mono text-[10px] text-bone/85 ltr"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+          <div
+            className={"flex shrink-0 items-center gap-1.5 text-xs font-semibold" + (focus ? "" : " mt-4")}
+            style={{ color: project.accent }}
+          >
+            <span>{view}</span>
+            <ArrowUpRight size={14} />
+          </div>
         </div>
       </div>
     </a>
