@@ -106,7 +106,7 @@ export class ParticleSystem {
       : Math.round(clamp((w * h) / (opts.mobile ? 1100 : 420), opts.mobile ? 1600 : 2400, opts.mobile ? 2600 : 7000));
     this.lineSeg = this.reduced ? 260 : opts.mobile ? 300 : 900;
 
-    this.mouseForce = this.reduced ? 0 : opts.mobile ? 0.25 : 0.9;
+    this.mouseForce = this.reduced ? 0 : opts.mobile ? 0.25 : 0.75;
 
     this.forms = buildForms(this.count, this.lineSeg);
 
@@ -385,7 +385,7 @@ export class ParticleSystem {
     this.pMat.uniforms.uTime.value = this.time;
     this.pMat.uniforms.uIntro.value = this.intro;
     this.pMat.uniforms.uPointer.value.copy(this.pointerView);
-    this.pMat.uniforms.uPointerR.value = halfH * 0.42;
+    this.pMat.uniforms.uPointerR.value = halfH * 0.24; // a small, precise bubble — a wide one reads as a smudge
     this.lMat.uniforms.uTime.value = this.time;
     this.lMat.uniforms.uIntro.value = this.intro;
 
