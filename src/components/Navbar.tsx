@@ -4,11 +4,15 @@ import { useLang } from "../i18n/LangProvider";
 import { identity, socials, STAGE_COLORS } from "../config";
 import { scrollToId, setScrollLocked } from "../scroll/useSmoothScroll";
 import { onScroll } from "../scroll/scrollStore";
+import LimelightNav from "./LimelightNav";
+
+const STAGE_COUNT = 5; // hero, cv, data, web, contact — mirrors STAGES in config.ts
 
 export default function Navbar() {
   const { t, lang, toggle } = useLang();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [activeStage, setActiveStage] = useState(0);
   const spineRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -20,11 +24,14 @@ export default function Navbar() {
 
   // Phones have no side rail, so the page's progress lives in a hairline
   // under the header instead — the same cyan→violet→rose spine, laid flat.
+  // Desktop gets its own echo of that spine: a limelight under the active
+  // nav label, so the top bar always agrees with what the particles are doing.
   useEffect(() => {
     return onScroll((s) => {
       if (spineRef.current) {
         spineRef.current.style.transform = "scaleX(" + Math.max(0, Math.min(1, s.progress)) + ")";
       }
+      setActiveStage(Math.max(0, Math.min(STAGE_COUNT - 1, Math.round(s.stage))));
     });
   }, []);
 
@@ -72,17 +79,13 @@ export default function Navbar() {
             <span className="text-dim">.dev</span>
           </button>
 
-          <nav className="hidden items-center gap-7 md:flex">
-            {links.map((l) => (
-              <button
-                key={l.id}
-                onClick={() => go(l.id)}
-                data-cursor-hover
-                className="relative text-xs tracking-wide text-bone/70 transition-colors hover:text-bone after:absolute after:-bottom-1 after:start-0 after:h-px after:w-0 after:bg-cyanx after:transition-all after:duration-300 hover:after:w-full"
-              >
-                {l.short}
-              </button>
-            ))}
+          <div className="hidden items-center gap-7 md:flex">
+            <LimelightNav
+              className="gap-7"
+              items={links.map((l) => ({ id: l.id, label: l.short, color: l.color }))}
+              activeIndex={activeStage}
+              onSelect={go}
+            />
             <button
               onClick={toggle}
               data-cursor-hover
@@ -99,7 +102,7 @@ export default function Navbar() {
             >
               {t.nav.resume}
             </a>
-          </nav>
+          </div>
 
           <div className="relative z-10 flex items-center gap-3 md:hidden">
             <button

@@ -13,11 +13,56 @@ export type Project = {
   stars: number;
   stat: string;
   accent: string;
+  /** Marks a project as a must-see highlight — gets the special violet glow treatment. */
+  featured?: boolean;
 };
 
 export type Group = "cv" | "data" | "web";
 
 export const cvProjects: Project[] = [
+  {
+    id: "thief",
+    title: "Thief / Concealed-Face Detection",
+    descEn:
+      "Tells a robber in a balaclava from a customer in a surgical mask — real-time concealed-face detection for retail CCTV. Pose-based orientation, occlusion-hardened tracking, zero training.",
+    descFa:
+      "سارقِ نقاب‌دار را از مشتریِ ماسک‌دار تشخیص می‌دهد — تشخیصِ بلادرنگِ چهره‌ی پوشیده برای دوربین‌های فروشگاهی. جهت‌یابیِ pose-محور، ردیابیِ مقاوم به انسداد، بدون آموزش.",
+    tags: ["ByteTrack", "Pose Estimation", "CCTV"],
+    url: "https://github.com/ParsaVictor/thief-face-detection",
+    image: "/images/project-thief.jpg",
+    stars: 4,
+    stat: "Retail CCTV",
+    accent: "#ff6a5e",
+    featured: true,
+  },
+  {
+    id: "visual-intelligence-engine",
+    title: "Visual Intelligence Engine",
+    descEn:
+      "Multimodal search over an image archive — face recognition, species detection, food recognition and open-vocabulary text search, all on one unified vector index.",
+    descFa:
+      "جست‌وجوی چندوجهی روی آرشیوِ تصویر — تشخیصِ چهره، تشخیصِ گونه، تشخیصِ غذا و جست‌وجوی متنیِ open-vocabulary، همه روی یک ایندکسِ برداریِ یکپارچه.",
+    tags: ["CLIP", "ArcFace", "Vector Search"],
+    url: "https://github.com/ParsaVictor/visual-intelligence-engine",
+    image: "/images/project-visual-intelligence.jpg",
+    stars: 4,
+    stat: "Multimodal",
+    accent: "#a894ff",
+  },
+  {
+    id: "ppe-sentinel",
+    title: "PPE Detection — Sentinel",
+    descEn:
+      "Real-time PPE compliance monitoring for construction CCTV — a person-grounded two-stage pipeline (COCO person + ByteTrack → head/torso geometric association → temporal hysteresis). TensorRT FP16, all weights included, Colab-ready.",
+    descFa:
+      "پایشِ بلادرنگِ رعایتِ تجهیزاتِ ایمنی (PPE) برای دوربین‌های کارگاه ساختمانی — خط‌لوله‌ی دومرحله‌ایِ فرد-محور (تشخیصِ فرد COCO + ByteTrack ← تناظرِ هندسیِ سر/تنه ← هیسترزیسِ زمانی). TensorRT FP16، همراه با تمامِ وزن‌ها، آماده برای Colab.",
+    tags: ["YOLO", "ByteTrack", "TensorRT", "Safety"],
+    url: "https://github.com/ParsaVictor/PPE_detection-Sentinel",
+    image: "/images/project-ppe.jpg",
+    stars: 0,
+    stat: "Construction CCTV",
+    accent: "#ffb454",
+  },
   {
     id: "pelakx",
     title: "PelakX",
@@ -69,24 +114,10 @@ export const cvProjects: Project[] = [
       "طبقه‌بندی تفسیرپذیرِ قطعات الکترونیکی از تصویر — Random Forest روی ۳۳ ویژگیِ مهندسی‌شده‌ی بینایی ماشین، دقتِ ۹۳٫۳٪ روی holdout، هر پیش‌بینی قابل‌ردیابی به یک مسیرِ تصمیمِ خوانا.",
     tags: ["Random Forest", "OpenCV", "Explainable AI"],
     url: "https://github.com/ParsaVictor/pcb-component-classifier",
-    image: "/images/project-cv-2.png",
+    image: "/images/project-cv-2.jpg",
     stars: 3,
     stat: "93.3% acc",
     accent: "#35e0ff",
-  },
-  {
-    id: "thief",
-    title: "Thief / Concealed-Face Detection",
-    descEn:
-      "Tells a robber in a balaclava from a customer in a surgical mask — real-time concealed-face detection for retail CCTV. Pose-based orientation, occlusion-hardened tracking, zero training.",
-    descFa:
-      "سارقِ نقاب‌دار را از مشتریِ ماسک‌دار تشخیص می‌دهد — تشخیصِ بلادرنگِ چهره‌ی پوشیده برای دوربین‌های فروشگاهی. جهت‌یابیِ pose-محور، ردیابیِ مقاوم به انسداد، بدون آموزش.",
-    tags: ["ByteTrack", "Pose Estimation", "CCTV"],
-    url: "https://github.com/ParsaVictor/thief-face-detection",
-    image: "/images/project-thief.jpg",
-    stars: 4,
-    stat: "Retail CCTV",
-    accent: "#ff6a5e",
   },
 ];
 
@@ -100,7 +131,7 @@ export const dataProjects: Project[] = [
       "پنج الگوریتمِ داوری‌شده برای حذف نویز و بازسازیِ منحنی از ابر نقاطِ سه‌بعدی، محک‌خورده روی داده‌ی اسکنِ صنعتیِ چاپ سه‌بعدی.",
     tags: ["Open3D", "B-Spline", "Computational Geometry"],
     url: "https://github.com/ParsaVictor/point-cloud-curve-reconstruction",
-    image: "/images/project-pointcloud.png",
+    image: "/images/project-pointcloud.jpg",
     stars: 4,
     stat: "5 algorithms",
     accent: "#a894ff",
@@ -114,7 +145,7 @@ export const dataProjects: Project[] = [
       "قالبِ تمیز و تکرارپذیر برای بینایی ماشین و یادگیری ماشین — آموزشِ config-محور، runهای seed-دار، تست و CI از همان ابتدا.",
     tags: ["PyTorch", "MLOps", "Reproducibility"],
     url: "https://github.com/ParsaVictor/ai-project-template",
-    image: "/images/project-ai-template.png",
+    image: "/images/project-ai-template.jpg",
     stars: 3,
     stat: "config-driven",
     accent: "#35e0ff",
@@ -132,6 +163,7 @@ export const dataProjects: Project[] = [
     stars: 0,
     stat: "~90% fewer tokens",
     accent: "#a894ff",
+    featured: true,
   },
 ];
 

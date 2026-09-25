@@ -111,7 +111,7 @@ export const dict = {
         },
       ],
       stats: [
-        { value: "13", label: "open-source repos" },
+        { value: "15", label: "open-source repos" },
         { value: "3+", label: "years writing code" },
         { value: "675K", label: "labelled boxes in one dataset" },
         { value: "50", label: "object classes detected" },
@@ -155,6 +155,7 @@ export const dict = {
       websiteSoon: "Site coming soon",
       close: "Close",
       stars: "stars",
+      featured: "Must-see",
     },
     contact: {
       kicker: "LET'S BUILD",
@@ -279,7 +280,7 @@ export const dict = {
         },
       ],
       stats: [
-        { value: "۱۳", label: "مخزن متن‌باز" },
+        { value: "۱۵", label: "مخزن متن‌باز" },
         { value: "+۳", label: "سال کدنویسی" },
         { value: "۶۷۵ هزار", label: "جعبه‌ی برچسب‌خورده در یک دیتاست" },
         { value: "۵۰", label: "کلاسِ شیءِ تشخیص‌داده‌شده" },
@@ -323,6 +324,7 @@ export const dict = {
       websiteSoon: "وب‌سایت به‌زودی",
       close: "بستن",
       stars: "ستاره",
+      featured: "حتماً ببین",
     },
     contact: {
       kicker: "بیایید بسازیم",

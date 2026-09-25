@@ -209,7 +209,7 @@ function Dossier({
         <span className="text-bone/80">{labels.status}</span>
         <span className="text-dim">·</span>
         <span className="text-dim">
-          {digits(13, lang)} {labels.open}
+          {digits(15, lang)} {labels.open}
         </span>
       </div>
     </div>

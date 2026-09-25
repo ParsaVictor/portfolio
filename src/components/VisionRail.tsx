@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpRight, ChevronLeft, ChevronRight, MoveHorizontal, Star } from "lucide-react";
 import Reveal from "./Reveal";
 import Scramble from "./Scramble";
 import SideLabel from "./SideLabel";
+import FeaturedBadge from "./FeaturedBadge";
+import ParallaxCardCarousel, { type CarouselCard } from "./ParallaxCardCarousel";
 import { useLang } from "../i18n/LangProvider";
 import { cvProjects, desc, type Project } from "../data/projects";
 import { STAGE_COLORS } from "../config";
-import { useScrub } from "../scroll/useScrub";
 import { useHandover } from "../scroll/useHandover";
 import { clamp } from "../lib/num";
 import { openProject, shouldOpenInPage } from "../state/projectModal";
@@ -18,37 +19,14 @@ const N = cvProjects.length;
 /**
  * Computer vision — the flagship section.
  *
- * A sticky stage: copy holds one side while the projects ride a horizontal arc
- * on the other, scrubbed by scroll. Each card is framed like a detector
- * read-out, which is what these projects actually are.
+ * Desktop: a 3D card deck that leans into the cursor and fans out behind the
+ * focused project — autoplaying, click-to-focus, arrow/dot controls. Mobile
+ * keeps the native snap-scroll rail below, since touch already does momentum
+ * and snapping better than anything scripted.
  */
 export default function VisionRail() {
   const { t, lang } = useLang();
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const barRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
-
-  const onScrub = useCallback((p: number) => {
-    const pos = p * (N - 1);
-    for (let i = 0; i < N; i++) {
-      const el = cardRefs.current[i];
-      if (!el) continue;
-      const d = i - pos; // signed distance from the focus slot
-      const ad = Math.abs(d);
-      el.style.transform =
-        "translate3d(" + d * 74 + "%, " + ad * 2.4 + "%, " + -ad * 230 + "px) " +
-        "rotateY(" + -d * 24 + "deg) scale(" + (1 - Math.min(ad, 3) * 0.08) + ")";
-      el.style.opacity = String(clamp(1 - ad * 0.34, 0, 1));
-      el.style.zIndex = String(100 - Math.round(ad * 10));
-      el.style.pointerEvents = ad < 0.5 ? "auto" : "none";
-    }
-    if (barRef.current) {
-      barRef.current.style.transform = "scaleX(" + clamp(p, 0.02, 1) + ")";
-    }
-    setActive(Math.round(pos));
-  }, []);
-
-  const wrapRef = useScrub(onScrub);
   const stageRef = useHandover<HTMLDivElement>(1);
   const railRef = useRef<HTMLDivElement>(null);
 
@@ -156,6 +134,24 @@ export default function VisionRail() {
   }, []);
   const current = cvProjects[clamp(active, 0, N - 1)];
 
+  const carouselCards: CarouselCard[] = useMemo(
+    () =>
+      cvProjects.map((p) => ({
+        id: p.id,
+        title: p.title,
+        description: desc(p, lang),
+        imageUrl: p.image,
+        tags: p.tags,
+        stat: p.stat,
+        accent: p.accent,
+        featured: p.featured,
+        actionLabel: t.project.open,
+        featuredLabel: t.project.featured,
+        onAction: () => openProject(p),
+      })),
+    [lang, t.project.open, t.project.featured]
+  );
+
   return (
     <section id="cv" data-scene="1" className="relative">
       {/* ── small screens: a native horizontal snap rail ──────────────── */}
@@ -211,7 +207,7 @@ export default function VisionRail() {
               className="w-[78vw] shrink-0 snap-center will-change-transform sm:w-[58vw]"
               style={{ transition: "opacity 220ms linear" }}
             >
-              <VisionCard project={p} index={i} lang={lang} view={t.project.open} />
+              <VisionCard project={p} index={i} lang={lang} view={t.project.open} featuredLabel={t.project.featured} />
             </div>
           ))}
         </div>
@@ -240,73 +236,54 @@ export default function VisionRail() {
         </div>
       </div>
 
-      {/* ── desktop: sticky stage — cloud left, content right ───────── */}
-      <div
-        ref={wrapRef}
-        className="relative hidden lg:block"
-        style={{ height: N * 62 + 90 + "vh" }}
-      >
-        <div className="sticky top-0 flex h-screen items-center overflow-hidden">
-          <div
-            ref={stageRef}
-            className="mx-auto grid w-full max-w-[1600px] grid-cols-[minmax(0,31%)_minmax(0,69%)] items-center gap-8 px-10"
-          >
-            {/* the swarm owns this column — only a plate marks it */}
-            <SideLabel
-              index={t.cv.index}
-              kicker={t.cv.kicker}
-              caption={t.cv.sideNote}
-              accent={ACCENT}
-            />
+      {/* ── desktop: the deck — cloud left, content right ───────────── */}
+      <div className="relative hidden py-24 lg:block xl:py-28">
+        <div
+          ref={stageRef}
+          className="mx-auto grid w-full max-w-[1600px] grid-cols-[minmax(0,31%)_minmax(0,69%)] items-center gap-8 px-10"
+        >
+          {/* the swarm owns this column — only a plate marks it */}
+          <SideLabel
+            index={t.cv.index}
+            kicker={t.cv.kicker}
+            caption={t.cv.sideNote}
+            accent={ACCENT}
+          />
 
-            <div className="flex h-[82vh] flex-col justify-center">
-              {/* header + live read-out share one compact band */}
-              <div className="flex items-end justify-between gap-8 border-b border-bone/10 pb-6">
-                <div className="copy-plate min-w-0">
-                  <StageCopy accent={ACCENT} meta={t.cv} />
-                </div>
-
-                <div className="w-[220px] shrink-0 text-end">
-                  <div className="flex items-baseline justify-end gap-2 font-mono text-[11px] tracking-[0.24em] text-dim ltr">
-                    <span className="text-3xl font-bold tabular-nums" style={{ color: ACCENT }}>
-                      {digits(String(active + 1).padStart(2, "0"), lang)}
-                    </span>
-                    <span>/ {digits(String(N).padStart(2, "0"), lang)}</span>
-                  </div>
-                  <div className="mt-2 truncate font-mono text-[11px] tracking-wider text-bone/80 ltr">
-                    {current.title}
-                  </div>
-                  <div className="mt-3 h-px w-full overflow-hidden bg-bone/10">
-                    <div
-                      ref={barRef}
-                      className="h-full origin-left"
-                      style={{ background: ACCENT, transform: "scaleX(0.02)" }}
-                    />
-                  </div>
-                  <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.26em] text-dim">
-                    {t.cv.railHint}
-                  </p>
-                </div>
+          <div className="flex flex-col justify-center">
+            {/* header + live read-out share one compact band */}
+            <div className="flex items-end justify-between gap-8 border-b border-bone/10 pb-6">
+              <div className="copy-plate min-w-0">
+                <StageCopy accent={ACCENT} meta={t.cv} />
               </div>
 
-              {/* the arc gets the whole column width */}
-              <div
-                dir="ltr"
-                className="relative mt-6 h-[58vh] [perspective:1700px]"
-              >
-                {cvProjects.map((p, i) => (
-                  <div
-                    key={p.id}
-                    ref={(el) => {
-                      cardRefs.current[i] = el;
-                    }}
-                    className="absolute left-1/2 top-1/2 w-[min(30vw,440px)] -translate-x-1/2 -translate-y-1/2 will-change-transform"
-                    style={{ transition: "opacity 200ms linear" }}
-                  >
-                    <VisionCard project={p} index={i} lang={lang} view={t.project.open} focus />
-                  </div>
-                ))}
+              <div className="w-[220px] shrink-0 text-end">
+                <div className="flex items-baseline justify-end gap-2 font-mono text-[11px] tracking-[0.24em] text-dim ltr">
+                  <span className="text-3xl font-bold tabular-nums" style={{ color: ACCENT }}>
+                    {digits(String(active + 1).padStart(2, "0"), lang)}
+                  </span>
+                  <span>/ {digits(String(N).padStart(2, "0"), lang)}</span>
+                </div>
+                <div className="mt-2 truncate font-mono text-[11px] tracking-wider text-bone/80 ltr">
+                  {current.title}
+                </div>
+                <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.26em] text-dim">
+                  {t.cv.railHint}
+                </p>
               </div>
+            </div>
+
+            {/* the deck gets the whole column width */}
+            <div className="mt-10">
+              <ParallaxCardCarousel
+                cards={carouselCards}
+                cardWidth={340}
+                cardHeight={440}
+                gap={26}
+                perspective={1400}
+                maxRotation={14}
+                onActiveChange={(i) => setActive(i)}
+              />
             </div>
           </div>
         </div>
@@ -371,16 +348,55 @@ function VisionCard({
   index,
   lang,
   view,
+  featuredLabel,
   focus = false,
 }: {
   project: Project;
   index: number;
   lang: "en" | "fa";
   view: string;
+  featuredLabel: string;
   focus?: boolean;
 }) {
+  const rootRef = useRef<HTMLAnchorElement>(null);
+  const rafRef = useRef<number | undefined>(undefined);
+  const finePointer = useRef(
+    typeof window !== "undefined" &&
+      window.matchMedia("(pointer: fine)").matches &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+
+  // A light mouse-parallax tilt on the focused desktop card: the card leans
+  // into the cursor and a soft sheen follows it, like light off glass. It
+  // rides on top of the scroll-driven position transform (set on this card's
+  // parent wrapper), not instead of it — and it stays off the image's own
+  // overflow-hidden box, since a rotated element that also clips its own
+  // content gets hit-tested at its pre-transform rect in Chromium.
+  const handlePointerMove = (e: React.PointerEvent<HTMLAnchorElement>) => {
+    if (!focus || !finePointer.current) return;
+    const el = rootRef.current;
+    if (!el) return;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      const rect = el.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width - 0.5;
+      const py = (e.clientY - rect.top) / rect.height - 0.5;
+      el.style.setProperty("--tilt-x", (py * -7).toFixed(2) + "deg");
+      el.style.setProperty("--tilt-y", (px * 7).toFixed(2) + "deg");
+      el.style.setProperty("--glow-x", (px * 100 + 50).toFixed(1) + "%");
+      el.style.setProperty("--glow-y", (py * 100 + 50).toFixed(1) + "%");
+    });
+  };
+
+  const handlePointerLeave = () => {
+    if (!focus) return;
+    rootRef.current?.style.setProperty("--tilt-x", "0deg");
+    rootRef.current?.style.setProperty("--tilt-y", "0deg");
+  };
+
   return (
     <a
+      ref={rootRef}
       href={project.url}
       target="_blank"
       rel="noreferrer"
@@ -390,11 +406,34 @@ function VisionCard({
         e.preventDefault();
         openProject(project);
       }}
-      className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-bone/12 bg-ink/85 backdrop-blur-md transition-colors duration-300 hover:border-bone/30"
-      style={{ boxShadow: focus ? "0 30px 90px -40px " + project.accent : undefined }}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+      className={
+        "group relative flex cursor-pointer flex-col rounded-2xl border border-bone/12 bg-ink/85 backdrop-blur-md transition-colors duration-300 hover:border-bone/30" +
+        (project.featured ? " mpk-featured" : "")
+      }
+      style={{
+        boxShadow: focus ? "0 30px 90px -40px " + project.accent : undefined,
+        transform: focus
+          ? "rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))"
+          : undefined,
+        transition: focus ? "transform 300ms cubic-bezier(0.22, 1, 0.36, 1), border-color 300ms" : undefined,
+      }}
     >
+      {/* the sheen: a soft highlight that tracks the cursor, only on the focused card */}
+      {focus && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-20 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          style={{
+            background:
+              "radial-gradient(circle at var(--glow-x, 50%) var(--glow-y, 50%), rgba(255,255,255,0.16), transparent 55%)",
+          }}
+        />
+      )}
+
       {/* the read-out — the image stays at full brightness, only the HUD sits over it */}
-      <div data-media className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-black">
+      <div data-media className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-t-2xl bg-black">
         {project.image ? (
           <img
             src={project.image}
@@ -412,6 +451,10 @@ function VisionCard({
         )}
 
         <Brackets color={project.accent} />
+
+        {project.featured && (
+          <FeaturedBadge label={featuredLabel} className="absolute top-3 start-3" />
+        )}
 
         <span
           className="absolute bottom-3 start-3 rounded-md px-2 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"

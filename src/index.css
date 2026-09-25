@@ -90,6 +90,18 @@ body {
   }
 }
 
+/* a featured card's violet ring breathes, slow enough to read as "special"
+   rather than "notification" */
+@keyframes mpk-featured-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(168, 148, 255, 0.35), 0 0 22px 2px rgba(168, 148, 255, 0.16);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(168, 148, 255, 0.6), 0 0 34px 6px rgba(168, 148, 255, 0.32);
+  }
+}
+
 @layer utilities {
   /* The overlay scrolls internally, so it needs a scrollbar people can see. */
   .mpk-scroll {
@@ -106,6 +118,18 @@ body {
     background: rgba(242, 236, 225, 0.22);
     border-radius: 999px;
     border: none;
+  }
+
+  /* the violet ring a featured card wears — a slow breathing glow, still
+     enough to notice, never enough to distract from reading the card */
+  .mpk-featured {
+    animation: mpk-featured-glow 3.2s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mpk-featured {
+      animation: none;
+      box-shadow: 0 0 0 1px rgba(168, 148, 255, 0.45), 0 0 24px 3px rgba(168, 148, 255, 0.22);
+    }
   }
 
   /* A pool of dark under a block of copy, so text never has to compete with

@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Reveal from "./Reveal";
 import { StageCopy } from "./VisionRail";
+import FeaturedBadge from "./FeaturedBadge";
 import { useLang } from "../i18n/LangProvider";
 import { dataProjects, desc, type Project } from "../data/projects";
 import { STAGE_COLORS } from "../config";
@@ -46,7 +47,14 @@ export default function DataConsole() {
         {/* ── band 3 · the work ───────────────────────────────────────── */}
         <div className="mt-14 border-t border-bone/10">
           {dataProjects.map((p, i) => (
-            <FocusRow key={p.id} project={p} index={i} lang={lang} open={t.project.open} />
+            <FocusRow
+              key={p.id}
+              project={p}
+              index={i}
+              lang={lang}
+              open={t.project.open}
+              featuredLabel={t.project.featured}
+            />
           ))}
         </div>
       </div>
@@ -61,11 +69,13 @@ function FocusRow({
   index,
   lang,
   open,
+  featuredLabel,
 }: {
   project: Project;
   index: number;
   lang: "en" | "fa";
   open: string;
+  featuredLabel: string;
 }) {
   const ref = useRef<HTMLAnchorElement>(null);
 
@@ -122,7 +132,10 @@ function FocusRow({
       {/* every project gets a visual — a screenshot where one exists, generated
           cover art in the site's own language where one does not */}
       <div
-        className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-bone/10 bg-black sm:ms-5"
+        className={
+          "relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-bone/10 bg-black sm:ms-5" +
+          (project.featured ? " mpk-featured" : "")
+        }
         style={{ transform: "scale(calc(1 + var(--focus, 0) * 0.045))" }}
       >
         {project.image ? (
@@ -146,6 +159,9 @@ function FocusRow({
         >
           {project.stat}
         </span>
+        {project.featured && (
+          <FeaturedBadge label={featuredLabel} className="absolute top-2 start-2" />
+        )}
       </div>
 
       <div className="min-w-0">
