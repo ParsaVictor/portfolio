@@ -17,12 +17,9 @@ type Ctx = {
 };
 
 const LangContext = createContext<Ctx | null>(null);
-const KEY = "mpk-lang";
-
+// Every visit opens in English; the toggle switches for the visit only.
 function initialLang(): Lang {
-  if (typeof window === "undefined") return "en";
-  const saved = window.localStorage.getItem(KEY);
-  return saved === "fa" || saved === "en" ? saved : "en";
+  return "en";
 }
 
 export function LangProvider({ children }: { children: ReactNode }) {
@@ -33,11 +30,6 @@ export function LangProvider({ children }: { children: ReactNode }) {
     html.lang = lang;
     html.dir = dict[lang].dir;
     html.dataset.lang = lang;
-    try {
-      window.localStorage.setItem(KEY, lang);
-    } catch {
-      /* ignore */
-    }
   }, [lang]);
 
   const setLang = useCallback((l: Lang) => setLangState(l), []);
