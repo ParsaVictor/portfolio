@@ -290,10 +290,12 @@ export default function VisionRail() {
                 </div>
               </div>
 
-              {/* the arc gets the whole column width */}
+              {/* the arc gets the whole column width — clipped to it, so a card that
+                  has scrolled far off-focus disappears at the column's own edge
+                  instead of drifting, half-faded, over the swarm's side plate */}
               <div
                 dir="ltr"
-                className="relative mt-6 h-[58vh] [perspective:1700px]"
+                className="relative mt-6 h-[58vh] overflow-hidden [perspective:1700px]"
               >
                 {cvProjects.map((p, i) => (
                   <div
