@@ -472,11 +472,11 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
   // Desktop: graph and read-out side by side, so the whole act — the map and
   // what it means — reads in a single screen instead of a scroll apart.
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-center lg:gap-10">
+    <div className="lg:grid lg:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)] lg:items-center lg:gap-10">
       <div
         ref={boxRef}
         className="relative w-full select-none overflow-hidden rounded-3xl"
-        style={{ height: compact ? "clamp(300px, 46svh, 380px)" : "clamp(400px, 60vh, 600px)" }}
+        style={{ height: compact ? "clamp(300px, 46svh, 380px)" : "clamp(400px, min(70vh, calc(100vh - 250px)), 700px)" }}
       >
         <canvas
           ref={canvasRef}
@@ -504,7 +504,7 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
             <button
               key={n.id}
               type="button"
-              data-cursor-hover
+              data-cursor-plain
               onClick={() => pin(i)}
               onFocus={(e) => e.currentTarget.matches(":focus-visible") && setHover(i)}
               onBlur={() => setHover(null)}
@@ -615,10 +615,10 @@ function ReadOut({
             <button
               key={br.key}
               type="button"
-              data-cursor-hover
+              data-cursor-plain
               onClick={() => onBranch(bi)}
               aria-pressed={on}
-              className="flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 font-mono text-[10.5px] tracking-[0.12em] transition-colors duration-200"
+              className="flex min-h-10 items-center gap-2 lg:min-h-9 whitespace-nowrap rounded-full border px-3 py-1.5 font-mono text-[10.5px] tracking-[0.12em] transition-colors duration-200"
               style={{
                 borderColor: on ? br.color : "rgba(242,236,225,0.12)",
                 background: on ? "color-mix(in oklab, " + br.color + " 14%, transparent)" : "rgba(10,9,8,0.5)",
@@ -633,7 +633,7 @@ function ReadOut({
       </div>
 
       {/* the answer */}
-      <div aria-live="polite" className="min-h-[6.5rem] rounded-2xl border lg:min-h-[17rem] border-bone/10 bg-ink/70 p-4 backdrop-blur-md sm:p-5">
+      <div aria-live="polite" className="min-h-[6.5rem] rounded-2xl border lg:min-h-[15rem] border-bone/10 bg-ink/70 p-4 backdrop-blur-md sm:p-5">
         {!b ? (
           <>
             <p className="font-mono text-[11px] tracking-[0.12em] text-bone/80 ltr">
@@ -677,7 +677,7 @@ function ReadOut({
                   <button
                     key={l}
                     type="button"
-                    data-cursor-hover
+                    data-cursor-plain
                     onClick={() => onTool(b.key + "-" + l)}
                     className="min-h-8 rounded-full border border-bone/12 px-2.5 py-1 font-mono text-[11px] text-bone/85 transition-colors hover:text-bone"
                     style={activeId === b.key + "-" + l ? { borderColor: b.color, color: b.color } : undefined}
@@ -709,7 +709,7 @@ function ReadOut({
                       <button
                         key={id}
                         type="button"
-                        data-cursor-hover
+                        data-cursor-plain
                         onClick={() => openProject(p)}
                         className="group/p flex min-h-8 items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] text-bone/90 transition-colors hover:text-bone ltr"
                         style={{ borderColor: "color-mix(in oklab, " + p.accent + " 45%, transparent)" }}
@@ -729,7 +729,9 @@ function ReadOut({
       </div>
 
       {/* how to use it — kept out of the panel so it survives a selection */}
-      <p className="text-[12.5px] leading-6 text-dim">{compact ? g.hintTouch : g.hintPointer}</p>
+      <p className="text-[12.5px] leading-6 text-dim lg:[@media(max-height:780px)]:hidden">
+        {compact ? g.hintTouch : g.hintPointer}
+      </p>
     </div>
   );
 }

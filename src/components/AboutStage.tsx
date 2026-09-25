@@ -85,7 +85,7 @@ export default function AboutStage() {
           <div className="mx-auto w-full max-w-7xl px-6 lg:px-10">
             <ActMark index="II" label={t.about.skillsLabel} accent="#35e0ff" />
             <Reveal variant="fade" duration={900} delay={120}>
-              <p className="mt-4 max-w-xl text-[15px] leading-8 text-bone/70">
+              <p className="mt-4 max-w-2xl text-[15px] leading-8 text-bone/70">
                 {t.about.stackNote}
               </p>
             </Reveal>

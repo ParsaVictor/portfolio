@@ -26,6 +26,7 @@ export default function ChapterVeil() {
   const labelRef = useRef<HTMLSpanElement>(null);
   const lineRef = useRef<HTMLSpanElement>(null);
   const haloRef = useRef<HTMLDivElement>(null);
+  const spotRef = useRef<HTMLDivElement>(null);
 
   // what the plate says as it passes: the chapter it is opening onto
   const meta = [t.rail.hero, t.cv.kicker, t.data.kicker, t.web.kicker, t.contact.kicker];
@@ -37,8 +38,32 @@ export default function ChapterVeil() {
     if (!wrap) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
+    // The cursor carries a faint light of the next chapter's colour across
+    // the whole plate — the same light the swarm's numeral gives off where
+    // the pointer touches it, only quieter, so the numeral still burns
+    // brightest. Plate coordinates move with the plate, so the light is
+    // re-aimed on every mouse move and every scroll step.
+    const fine = window.matchMedia("(pointer: fine)").matches;
+    const mouse = { x: -9999, y: -9999 };
+    let plateY = 100; // % of the screen the plate is pushed down
+    let accentNow = STAGE_COLORS.hero as string;
+    const aim = () => {
+      const spot = spotRef.current;
+      if (!spot || !fine) return;
+      const y = mouse.y - (plateY / 100) * window.innerHeight;
+      spot.style.background =
+        "radial-gradient(520px circle at " + mouse.x + "px " + y + "px, " + accentNow + "24, " +
+        accentNow + "0d 38%, transparent 70%)";
+    };
+    const onMove = (e: MouseEvent) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+      if (wrap.style.visibility === "visible") aim();
+    };
+    if (fine) window.addEventListener("mousemove", onMove, { passive: true });
+
     let shown = -1;
-    return onScroll((s) => {
+    const off = onScroll((s) => {
       const p = Math.max(0, Math.min(1, s.stage - Math.floor(s.stage)));
       const idle = p <= 0.001 || p >= 0.999;
       wrap.style.visibility = idle ? "hidden" : "visible";
@@ -46,6 +71,7 @@ export default function ChapterVeil() {
 
       const next = Math.min(STAGES.length - 1, Math.ceil(s.stage));
       const accent = STAGE_COLORS[STAGES[next]];
+      accentNow = accent;
       if (next !== shown) {
         shown = next;
         if (labelRef.current) labelRef.current.textContent = metaRef.current[next];
@@ -69,6 +95,8 @@ export default function ChapterVeil() {
       else if (p > 0.75) y = -ss((p - 0.75) / 0.25) * 100;
       else y = 0;
       if (plateRef.current) plateRef.current.style.transform = "translate3d(0," + y + "%,0)";
+      plateY = y;
+      aim();
 
       // the beam rides the leading edge: top of the plate on the way up and
       // in, bottom of it on the way out
@@ -95,6 +123,10 @@ export default function ChapterVeil() {
       }
       if (lineRef.current) lineRef.current.style.transform = "scaleX(" + k + ")";
     });
+    return () => {
+      off();
+      if (fine) window.removeEventListener("mousemove", onMove);
+    };
   }, []);
 
   return (
@@ -119,6 +151,8 @@ export default function ChapterVeil() {
         />
         {/* a soft pool of the chapter's colour behind the number the swarm draws */}
         <div ref={haloRef} className="absolute inset-0" style={{ opacity: 0 }} />
+        {/* the cursor's own light, faint, over the whole plate */}
+        <div ref={spotRef} className="absolute inset-0" />
 
         {/* the chapter's name, printed under the number. The number itself is
             the particle swarm, which sits on its own layer above this plate. */}

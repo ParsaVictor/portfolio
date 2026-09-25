@@ -105,19 +105,22 @@ export default function Timeline({
   // Wide: cards alternate sides and each starts only once the last has
   // ended, so every leg of the connector gets a long, open run of its own —
   // the drawing is the part people enjoy, so it is given the room to be long.
-  const gap = narrow ? 18 : 64;
+  const gap = narrow ? 18 : 104;
+  // Wide: the route also runs in before the first card and out past the last,
+  // so the drawing has a lead-in and a finish of its own.
+  const LEAD = narrow ? 0 : 110;
   const tops: number[] = [];
   for (let i = 0; i < items.length; i++) {
-    tops.push(i === 0 ? 0 : tops[i - 1] + hOf(i - 1) + gap);
+    tops.push(i === 0 ? LEAD : tops[i - 1] + hOf(i - 1) + gap);
   }
   const height = items.length
-    ? Math.max(...tops.map((tp, i) => tp + hOf(i))) + (narrow ? 8 : 16)
+    ? Math.max(...tops.map((tp, i) => tp + hOf(i))) + (narrow ? 8 : LEAD)
     : 0;
 
   // Wide: each node is a port on its card's inner edge (the cards stop
   // GUTTER px short of the centre line), so the connector sweeps down the
   // gutter between the two columns and never runs underneath anybody's copy.
-  const GUTTER = 84;
+  const GUTTER = 112;
   const leftX = narrow ? 22 : w * 0.5 - GUTTER;
   const rightX = narrow ? 22 : w * 0.5 + GUTTER;
   const rawX = (i: number) => (narrow ? leftX : i % 2 === 0 ? leftX : rightX);
@@ -128,7 +131,10 @@ export default function Timeline({
 
   let d = "";
   if (w > 0) {
-    d = "M " + nodeX(0) + " " + nodeY(0);
+    const mid = w / 2;
+    d = narrow
+      ? "M " + nodeX(0) + " " + nodeY(0)
+      : "M " + mid + " 0 C " + mid + " " + nodeY(0) / 2 + ", " + nodeX(0) + " " + nodeY(0) / 2 + ", " + nodeX(0) + " " + nodeY(0);
     for (let i = 1; i < items.length; i++) {
       const x0 = nodeX(i - 1);
       const y0 = nodeY(i - 1);
@@ -136,6 +142,12 @@ export default function Timeline({
       const y1 = nodeY(i);
       const my = (y0 + y1) / 2;
       d += " C " + x0 + " " + my + ", " + x1 + " " + my + ", " + x1 + " " + y1;
+    }
+    if (!narrow) {
+      const xl = nodeX(items.length - 1);
+      const yl = nodeY(items.length - 1);
+      const my = (yl + height) / 2;
+      d += " C " + xl + " " + my + ", " + mid + " " + my + ", " + mid + " " + height;
     }
   }
 
@@ -172,8 +184,8 @@ export default function Timeline({
       const t = (y - ys[lo]) / Math.max(1e-6, ys[hi] - ys[lo]);
       return lens[lo] + (lens[hi] - lens[lo]) * t;
     };
-    const y0 = nodeY(0);
-    const y1 = nodeY(items.length - 1);
+    const y0 = narrow ? nodeY(0) : 0;
+    const y1 = narrow ? nodeY(items.length - 1) : height;
     const nodeLen = items.map((_, i) => lenAtY(nodeY(i)));
 
     const paint = (p: number) => {
@@ -223,7 +235,7 @@ export default function Timeline({
     const tick = (now: number) => {
       const dt = last ? Math.min(48, now - last) : 16;
       last = now;
-      shown += (aim - shown) * Math.min(1, dt / 110);
+      shown += (aim - shown) * Math.min(1, dt / 90);
       if (Math.abs(aim - shown) < 0.0004) shown = aim;
       paint(shown);
       raf = shown === aim ? 0 : requestAnimationFrame(tick);
@@ -242,8 +254,11 @@ export default function Timeline({
       // instead of another guessed percentage — draw progress is now
       // pixel-for-pixel locked to physical scroll through the timeline, so
       // it can never race ahead or lag behind, at any viewport size.
-      start: "top 36%",
-      end: "bottom 64%",
+      // the front runs from 38% down to 80% of the screen, so the route is
+      // complete while its last card is still in full view — well before the
+      // page starts handing over to the next chapter
+      start: "top 38%",
+      end: "bottom 80%",
       onUpdate: (self) => follow(self.progress),
       onRefresh: (self) => {
         shown = aim = self.progress;
@@ -336,7 +351,7 @@ export default function Timeline({
               top: tops[i] + "px",
               insetInlineStart: narrow ? "46px" : onRight ? "50%" : undefined,
               insetInlineEnd: narrow ? "0" : onRight ? undefined : "50%",
-              width: narrow ? "auto" : "min(44%, 560px)",
+              width: narrow ? "auto" : "min(47%, 580px)",
               paddingInlineStart: narrow ? 0 : onRight ? GUTTER + "px" : 0,
               paddingInlineEnd: narrow ? 0 : onRight ? 0 : GUTTER + "px",
               ["--lit" as string]: "0",
@@ -353,7 +368,7 @@ export default function Timeline({
                   "color-mix(in oklab, " + hue(i) + " calc(var(--lit) * 46%), rgba(242,236,225,0.09))",
                 // near-solid: the copy reads on its own ground, never on the
                 // swarm or the connector's glow passing behind it
-                background: "linear-gradient(180deg, rgba(38,34,30,0.94), rgba(24,22,19,0.94))",
+                background: "rgba(12,11,10,0.92)",
                 boxShadow: "0 18px 60px -30px color-mix(in oklab, " + hue(i) + " calc(var(--lit) * 85%), transparent)",
               }}
             >

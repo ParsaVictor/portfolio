@@ -395,7 +395,7 @@ export default function VisionRail() {
                   <button
                     key={p.id}
                     type="button"
-                    data-cursor-hover
+                    data-cursor-plain
                     onClick={() => jumpTo(i)}
                     aria-label={p.title}
                     aria-current={i === active}

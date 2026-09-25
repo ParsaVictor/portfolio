@@ -19,8 +19,13 @@ export default function CustomCursor() {
       pos.y = e.clientY;
       if (dotRef.current)
         dotRef.current.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
-      const target = e.target as HTMLElement;
-      setActive(!!target.closest("a, button, [data-cursor-hover]"));
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      // dense clusters of small controls (graph labels, chips, the project
+      // index) opt out: the ring swelling over every one of them reads as
+      // noise, not feedback — they light up themselves instead
+      const hit = target.closest("a, button, [data-cursor-hover]");
+      setActive(!!hit && !hit.closest("[data-cursor-plain]"));
     }
     window.addEventListener("mousemove", onMove);
 
