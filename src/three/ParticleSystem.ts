@@ -62,11 +62,15 @@ export class ParticleSystem {
   private targetProgress = 0;
   private stage = 0;
   private targetStage = 0;
-  private pointerView = new THREE.Vector2();
   private intro = 0;
   private introTarget = 0;
   private pointer = new THREE.Vector2(0, 0);
   private pointerTarget = new THREE.Vector2(0, 0);
+  /** The bubble's cursor, in NDC: tracks the mouse almost 1:1 (the camera
+   *  sway above uses a slow, smoothed copy — the bubble must not). Parked far
+   *  off-screen while the mouse is outside the window. */
+  private cursor = new THREE.Vector2(9, 9);
+  private cursorTarget = new THREE.Vector2(9, 9);
   private camZ = 18;
   private spread = 0;
   private midW = 0;
@@ -106,7 +110,7 @@ export class ParticleSystem {
       : Math.round(clamp((w * h) / (opts.mobile ? 1100 : 420), opts.mobile ? 1600 : 2400, opts.mobile ? 2600 : 7000));
     this.lineSeg = this.reduced ? 260 : opts.mobile ? 300 : 900;
 
-    this.mouseForce = this.reduced ? 0 : opts.mobile ? 0.25 : 0.75;
+    this.mouseForce = this.reduced ? 0 : opts.mobile ? 0.25 : 0.28; // a gentle nudge, not a blast
 
     this.forms = buildForms(this.count, this.lineSeg);
 
@@ -162,7 +166,9 @@ export class ParticleSystem {
         uSpread: { value: 0 },
         uMouseForce: { value: this.mouseForce },
         uPointer: { value: new THREE.Vector2() },
-        uPointerR: { value: 2.0 },
+        uPointerR: { value: 0.24 },
+        uAspect: { value: 1 },
+        uTanHalfFov: { value: 0.4 },
         uMidW: { value: 0 },
         uUnrot: { value: new THREE.Matrix3() },
         uColorFrom: { value: this.colors[0].clone() },
@@ -255,8 +261,16 @@ export class ParticleSystem {
     this.quiet = clamp(v, 0, 1);
   }
 
-  setPointer(nx: number, ny: number) {
+  setPointer(nx: number, ny: number, inside = true) {
     this.pointerTarget.set(nx, -ny);
+    if (inside) {
+      const wasOut = this.cursorTarget.x > 5;
+      this.cursorTarget.set(nx, -ny);
+      if (wasOut) this.cursor.copy(this.cursorTarget); // appear under the mouse, don't sweep in
+    } else {
+      this.cursorTarget.set(9, 9);
+      this.cursor.set(9, 9);
+    }
   }
 
   pulse() {
@@ -364,6 +378,7 @@ export class ParticleSystem {
     this.stage += (this.targetStage - this.stage) * clamp(dt / 220, 0, 1);
     this.intro += (this.introTarget - this.intro) * clamp(dt / 620, 0, 1);
     this.pointer.lerp(this.pointerTarget, clamp(dt / 200, 0, 1));
+    this.cursor.lerp(this.cursorTarget, clamp(dt / 40, 0, 1));
 
     // cinematic dolly on birth, then a gentle push-in across the page
     const zTarget =
@@ -376,16 +391,14 @@ export class ParticleSystem {
 
     this.applyStage();
 
-    // Project the cursor into view space at the swarm's depth, so the bubble
-    // actually sits under the pointer instead of drifting with aspect ratio.
-    const halfH = Math.abs(this.camZ) * Math.tan((this.camera.fov * Math.PI) / 360);
-    const halfW = halfH * this.camera.aspect;
-    this.pointerView.set(this.pointer.x * halfW, this.pointer.y * halfH);
-
+    // The bubble is resolved on screen by the shader (see POINT_VERT); it
+    // only needs the raw cursor, the aspect and the lens.
     this.pMat.uniforms.uTime.value = this.time;
     this.pMat.uniforms.uIntro.value = this.intro;
-    this.pMat.uniforms.uPointer.value.copy(this.pointerView);
-    this.pMat.uniforms.uPointerR.value = halfH * 0.24; // a small, precise bubble — a wide one reads as a smudge
+    this.pMat.uniforms.uPointer.value.copy(this.cursor);
+    this.pMat.uniforms.uAspect.value = this.camera.aspect;
+    this.pMat.uniforms.uTanHalfFov.value = Math.tan((this.camera.fov * Math.PI) / 360);
+    this.pMat.uniforms.uPointerR.value = 0.24; // in screen-height units — a small, precise bubble
     this.lMat.uniforms.uTime.value = this.time;
     this.lMat.uniforms.uIntro.value = this.intro;
 

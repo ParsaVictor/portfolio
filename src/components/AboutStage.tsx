@@ -31,7 +31,7 @@ export default function AboutStage() {
   const methodQuietRef = useQuietZone<HTMLDivElement>();
 
   return (
-    <section id="about" className="relative py-16 md:py-20 lg:py-24">
+    <section id="about" className="relative pb-6 pt-16 md:pt-20 lg:pb-0 lg:pt-24">
       <div ref={stageRef}>
         {/* ─────────────────────────── ACT I · the profile ───────────── */}
         <div className="mx-auto max-w-7xl px-6 lg:px-10">

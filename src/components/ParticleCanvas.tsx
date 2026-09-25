@@ -55,7 +55,7 @@ export default function ParticleCanvas({ active }: { active: boolean }) {
       dirObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["dir"] });
       const onPointer = (e: PointerEvent) =>
         s.setPointer((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
-      const onLeave = () => s.setPointer(0, 0);
+      const onLeave = () => s.setPointer(0, 0, false);
       const onDown = () => s.pulse();
 
       window.addEventListener("resize", onResize);

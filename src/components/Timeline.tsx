@@ -121,7 +121,7 @@ export default function Timeline({
       );
   }
   const height = items.length
-    ? Math.max(...tops.map((tp, i) => tp + hOf(i))) + (narrow ? 8 : LEAD)
+    ? Math.max(...tops.map((tp, i) => tp + hOf(i))) + (narrow ? 8 : 36)
     : 0;
 
   // Wide: each node is a port on its card's inner edge (the cards stop
@@ -257,19 +257,27 @@ export default function Timeline({
       if (!raf) raf = requestAnimationFrame(tick);
     };
 
+    // The drawing is timed against the seam that follows it: the handover
+    // begins when that seam's top reaches 55% of the screen, so the route is
+    // made to finish when it reaches 72% — always a clear stretch of scroll
+    // before the next chapter, at any screen height, with no padding needed.
+    const next = wrap.closest("section")?.nextElementSibling as HTMLElement | null;
+    const seam = next?.dataset.seam ? next : null;
+
     const st = ScrollTrigger.create({
       trigger: wrap,
+      ...(seam ? { endTrigger: seam } : {}),
       // Both edges pin to the SAME viewport reference point (dead centre),
       // so the vh term cancels out of the math entirely: scroll distance
       // == wrap's own height, exactly. That's what makes this correct
       // instead of another guessed percentage — draw progress is now
       // pixel-for-pixel locked to physical scroll through the timeline, so
       // it can never race ahead or lag behind, at any viewport size.
-      // the front runs from 38% down to 80% of the screen, so the route is
+      // the front runs from 38% down to the foot of the screen, so the route is
       // complete while its last card is still in full view — well before the
       // page starts handing over to the next chapter
       start: "top 38%",
-      end: "bottom 80%",
+      end: seam ? "top 72%" : "bottom 98%",
       onUpdate: (self) => follow(self.progress),
       onRefresh: (self) => {
         shown = aim = self.progress;

@@ -18,7 +18,9 @@ uniform float uMouseForce;
 uniform float uPointerR;
 uniform float uMidW;       // 1 while the swarm is reading out a chapter number
 uniform mat3  uUnrot;      // undoes the group rotation so the glyph faces the lens
-uniform vec2  uPointer;
+uniform vec2  uPointer;     // the cursor in NDC (-1..1), unsmoothed
+uniform float uAspect;      // viewport width / height
+uniform float uTanHalfFov;  // tan(fov / 2) — view units per NDC unit, per unit of depth
 uniform vec3  uColorFrom;
 uniform vec3  uColorTo;
 
@@ -74,15 +76,21 @@ void main() {
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
 
   // ── cursor bubble ───────────────────────────────────────────────────
-  // The pointer pushes points outward, opening a rounded cavity in the swarm
-  // that travels with the cursor. uPointer already arrives in view space, so
-  // the bubble sits exactly under the mouse at any aspect ratio.
-  vec2 fromP = mv.xy - uPointer;
+  // Measured on SCREEN, not at one depth: each point is compared with the
+  // cursor where it actually appears (its projected NDC position, aspect-
+  // corrected), so the cavity sits exactly under the mouse for near and far
+  // points alike, wherever the swarm has been shifted to. The push is then
+  // converted back to view units at the point's own depth, so a near point
+  // and a far point move the same distance on screen.
+  vec4 clip0 = projectionMatrix * mv;
+  vec2 onScreen = clip0.xy / max(clip0.w, 0.0001);
+  vec2 fromP = (onScreen - uPointer) * vec2(uAspect, 1.0);
   float d = length(fromP) + 0.0001;
   float infl = 1.0 - smoothstep(0.0, uPointerR, d);
   infl = infl * infl;                                   // tight rim, soft falloff
   vec2 dir = fromP / d;
-  mv.xy += dir * infl * uPointerR * uMouseForce;
+  float perNdc = -mv.z * uTanHalfFov;                   // view units per NDC unit here
+  mv.xy += dir * infl * uPointerR * perNdc * uMouseForce;
   // lift the displaced points toward the lens so the cavity reads as a dome
   mv.z += infl * uMouseForce * 0.55;
   // a little rotation in the rim keeps it alive rather than a dead hole
