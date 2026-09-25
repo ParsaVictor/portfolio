@@ -351,14 +351,6 @@ export default function VisionRail() {
                 dir="ltr"
                 className="relative mt-6 min-h-0 flex-1 max-h-[66vh] [@media(max-height:820px)]:mt-4"
               >
-                {/* ambient light in the focused project's own colour — the
-                    card sits in a glow of itself, and the glow changes hue
-                    as the next project takes the slot */}
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute left-1/2 top-1/2 h-[78%] w-[52%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.16] blur-[90px]"
-                  style={{ background: current.accent, transition: "background-color 700ms ease" }}
-                />
                 {/* the paint layer: a little taller than the arc so the focused
                     card's glow and shadow aren't sheared off, and faded at the
                     column's sides so an off-focus card dissolves at the edge —
