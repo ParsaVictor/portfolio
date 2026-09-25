@@ -134,9 +134,9 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
 
     const cx = w / 2;
     const cy = h / 2;
-    const rbx = usableW * (small ? 0.6 : 0.5);
-    const rby = usableH * (small ? 0.5 : 0.52);
-    const rlx = usableW * (small ? 0.42 : 0.5);
+    const rbx = usableW * (small ? 0.6 : 0.56);
+    const rby = usableH * (small ? 0.5 : 0.54);
+    const rlx = usableW * (small ? 0.42 : 0.52);
     const rly = usableH * (small ? 0.4 : 0.5);
 
     const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
@@ -484,11 +484,11 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
   // Desktop: graph and read-out side by side, so the whole act — the map and
   // what it means — reads in a single screen instead of a scroll apart.
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)] lg:items-center lg:gap-10">
+    <div className="lg:grid lg:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)] lg:[@media(min-height:760px)]:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-center lg:gap-10">
       <div
         ref={boxRef}
         className="relative w-full select-none overflow-hidden rounded-3xl"
-        style={{ height: compact ? "clamp(300px, 46svh, 380px)" : "clamp(400px, min(70vh, calc(100vh - 250px)), 700px)" }}
+        style={{ height: compact ? "clamp(300px, 46svh, 380px)" : "clamp(400px, min(76vh, calc(100vh - 250px)), 760px)" }}
       >
         <canvas
           ref={canvasRef}

@@ -398,7 +398,7 @@ export class ParticleSystem {
     this.pMat.uniforms.uPointer.value.copy(this.cursor);
     this.pMat.uniforms.uAspect.value = this.camera.aspect;
     this.pMat.uniforms.uTanHalfFov.value = Math.tan((this.camera.fov * Math.PI) / 360);
-    this.pMat.uniforms.uPointerR.value = 0.24; // in screen-height units — a small, precise bubble
+    this.pMat.uniforms.uPointerR.value = 0.48; // in screen-height units
     this.lMat.uniforms.uTime.value = this.time;
     this.lMat.uniforms.uIntro.value = this.intro;
 

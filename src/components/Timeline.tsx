@@ -105,35 +105,24 @@ export default function Timeline({
   // Wide: cards alternate sides and each starts only once the last has
   // ended, so every leg of the connector gets a long, open run of its own —
   // the drawing is the part people enjoy, so it is given the room to be long.
-  const gap = narrow ? 18 : 28;
+  const gap = narrow ? 18 : 104;
   // Wide: the route also runs in before the first card and out past the last,
   // so the drawing has a lead-in and a finish of its own.
-  const LEAD = narrow ? 0 : 70;
+  const LEAD = narrow ? 0 : 110;
   const tops: number[] = [];
   for (let i = 0; i < items.length; i++) {
-    // wide: alternate sides may overlap in height — only the card two rows up
-    // (same side) has to be cleared — which keeps the steps close together
-    if (i === 0) tops.push(LEAD);
-    else if (narrow) tops.push(tops[i - 1] + hOf(i - 1) + gap);
-    else
-      tops.push(
-        Math.max(tops[i - 1] + Math.max(150, hOf(i - 1) * 0.66), i >= 2 ? tops[i - 2] + hOf(i - 2) + gap : 0)
-      );
+    tops.push(i === 0 ? LEAD : tops[i - 1] + hOf(i - 1) + gap);
   }
   const height = items.length
-    ? Math.max(...tops.map((tp, i) => tp + hOf(i))) + (narrow ? 8 : 36)
+    ? Math.max(...tops.map((tp, i) => tp + hOf(i))) + (narrow ? 8 : LEAD)
     : 0;
 
   // Wide: each node is a port on its card's inner edge (the cards stop
   // GUTTER px short of the centre line), so the connector sweeps down the
   // gutter between the two columns and never runs underneath anybody's copy.
-  const GUTTER = 48;
-  // wide: the route threads through the middle of each card (it runs behind
-  // the solid card ground, so it never crosses the copy) and swings from
-  // side to side between them
-  const cardW = Math.min(w * 0.47, 580);
-  const leftX = narrow ? 22 : w * 0.5 - (cardW + GUTTER) / 2;
-  const rightX = narrow ? 22 : w * 0.5 + (cardW + GUTTER) / 2;
+  const GUTTER = 112;
+  const leftX = narrow ? 22 : w * 0.5 - GUTTER;
+  const rightX = narrow ? 22 : w * 0.5 + GUTTER;
   const rawX = (i: number) => (narrow ? leftX : i % 2 === 0 ? leftX : rightX);
   const nodeX = (i: number) => (rtl ? w - rawX(i) : rawX(i));
   // phone: level with the step label; wide: the card's middle, which gives
@@ -260,7 +249,7 @@ export default function Timeline({
     // The drawing is timed against the seam that follows it: the handover
     // begins when that seam's top reaches 55% of the screen, so the route is
     // made to finish when it reaches 72% — always a clear stretch of scroll
-    // before the next chapter, at any screen height, with no padding needed.
+    // before the next chapter, at any screen height.
     const next = wrap.closest("section")?.nextElementSibling as HTMLElement | null;
     const seam = next?.dataset.seam ? next : null;
 
@@ -273,11 +262,11 @@ export default function Timeline({
       // instead of another guessed percentage — draw progress is now
       // pixel-for-pixel locked to physical scroll through the timeline, so
       // it can never race ahead or lag behind, at any viewport size.
-      // the front runs from 38% down to the foot of the screen, so the route is
+      // the front runs from 38% down to 80% of the screen, so the route is
       // complete while its last card is still in full view — well before the
       // page starts handing over to the next chapter
       start: "top 38%",
-      end: seam ? "top 72%" : "bottom 98%",
+      end: seam ? "top 72%" : "bottom 80%",
       onUpdate: (self) => follow(self.progress),
       onRefresh: (self) => {
         shown = aim = self.progress;

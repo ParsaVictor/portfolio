@@ -373,7 +373,7 @@ export default function VisionRail() {
                       ref={(el) => {
                         cardRefs.current[i] = el;
                       }}
-                      className="absolute left-1/2 top-1/2 w-[min(38vw,560px)] -translate-x-1/2 -translate-y-1/2 will-change-transform"
+                      className="absolute left-1/2 top-1/2 w-[min(42vw,620px)] -translate-x-1/2 -translate-y-1/2 will-change-transform"
                       style={{ transition: "opacity 200ms linear" }}
                     >
                       <VisionCard
