@@ -391,16 +391,28 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
     if (!nodes.length) return;
     draw(0, 16);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Only animate while on screen. Left running, this loop competed with
+    // the swarm for frames right at the first chapter handover ("01"),
+    // which sits just below it — the one numeral that used to stutter.
     let raf = 0;
+    let visible = false;
     const loop = (tm: number) => {
-      raf = requestAnimationFrame(loop);
-      if (document.hidden) return;
+      raf = visible ? requestAnimationFrame(loop) : 0;
+      if (document.hidden || !visible) return;
       const dt = lastT.current ? Math.min(50, tm - lastT.current) : 16;
       lastT.current = tm;
       draw(tm, dt);
     };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      lastT.current = 0;
+      if (visible && !raf) raf = requestAnimationFrame(loop);
+    });
+    if (boxRef.current) io.observe(boxRef.current);
+    return () => {
+      io.disconnect();
+      cancelAnimationFrame(raf);
+    };
   }, [draw, nodes.length]);
 
   // reduced motion paints once per change instead of every frame
