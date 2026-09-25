@@ -15,6 +15,7 @@ import { digits } from "../lib/num";
 
 const ACCENT = STAGE_COLORS.cv;
 const N = cvProjects.length;
+const ARC_MASK = "linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)";
 
 /**
  * Computer vision — the flagship section.
@@ -27,18 +28,29 @@ export default function VisionRail() {
   const { t, lang } = useLang();
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const barRef = useRef<HTMLDivElement>(null);
+  const arcRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
 
+  // How much the whole arc has to shrink so the tallest card fits the height
+  // the stage actually has left under the header. 1 on a tall screen; below
+  // 1 on a short laptop, where a full-size card would otherwise be cut in half
+  // (or, unclipped, climb over the copy above it).
+  const fitRef = useRef(1);
+  const lastP = useRef(0);
+
   const onScrub = useCallback((p: number) => {
+    lastP.current = p;
+    const k = fitRef.current;
     const pos = p * (N - 1);
     for (let i = 0; i < N; i++) {
       const el = cardRefs.current[i];
       if (!el) continue;
       const d = i - pos; // signed distance from the focus slot
       const ad = Math.abs(d);
+      // translate % is of the unscaled box, so the spacing shrinks with k too
       el.style.transform =
-        "translate3d(" + d * 74 + "%, " + ad * 2.4 + "%, " + -ad * 230 + "px) " +
-        "rotateY(" + -d * 24 + "deg) scale(" + (1 - Math.min(ad, 3) * 0.08) + ")";
+        "translate3d(" + d * 74 * k + "%, " + ad * 2.4 + "%, " + -ad * 230 * k + "px) " +
+        "rotateY(" + -d * 24 + "deg) scale(" + k * (1 - Math.min(ad, 3) * 0.08) + ")";
       el.style.opacity = String(clamp(1 - ad * 0.34, 0, 1));
       el.style.zIndex = String(100 - Math.round(ad * 10));
       el.style.pointerEvents = ad < 0.5 ? "auto" : "none";
@@ -51,6 +63,29 @@ export default function VisionRail() {
 
   const wrapRef = useScrub(onScrub);
   const stageRef = useHandover<HTMLDivElement>(1);
+
+  // Re-fit whenever the room or a card's height changes — viewport resize,
+  // fonts/images settling, or a language switch rewrapping the copy.
+  // offsetHeight ignores transforms, so this reads the card's true size.
+  useEffect(() => {
+    const arc = arcRef.current;
+    if (!arc) return;
+    const measure = () => {
+      const room = arc.clientHeight;
+      let tallest = 0;
+      for (const el of cardRefs.current) if (el) tallest = Math.max(tallest, el.offsetHeight);
+      if (!room || !tallest) return; // desktop stage hidden (phones)
+      const k = Math.min(1, room / tallest);
+      if (Math.abs(k - fitRef.current) < 0.002) return;
+      fitRef.current = k;
+      onScrub(lastP.current);
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(arc);
+    for (const el of cardRefs.current) if (el) ro.observe(el);
+    measure();
+    return () => ro.disconnect();
+  }, [onScrub]);
   const railRef = useRef<HTMLDivElement>(null);
 
   // Which card sits in the rail's focus slot on touch screens. Drives the
@@ -247,7 +282,9 @@ export default function VisionRail() {
         className="relative hidden lg:block"
         style={{ height: N * 62 + 90 + "vh" }}
       >
-        <div className="sticky top-0 flex h-screen items-center overflow-hidden">
+        {/* pt-16 keeps the stage centred in the part of the screen the navbar
+            doesn't cover, so the header never tucks under it on short screens */}
+        <div className="sticky top-0 flex h-screen items-center overflow-hidden pt-16">
           <div
             ref={stageRef}
             className="mx-auto grid w-full max-w-[1600px] grid-cols-[minmax(0,31%)_minmax(0,69%)] items-center gap-8 px-10"
@@ -260,11 +297,11 @@ export default function VisionRail() {
               accent={ACCENT}
             />
 
-            <div className="flex h-[82vh] flex-col justify-center">
+            <div className="flex h-[calc(100vh-7rem)] max-h-[860px] flex-col justify-center">
               {/* header + live read-out share one compact band */}
-              <div className="flex items-end justify-between gap-8 border-b border-bone/10 pb-6">
+              <div className="flex shrink-0 items-end justify-between gap-8 border-b border-bone/10 pb-6 [@media(max-height:820px)]:pb-4">
                 <div className="copy-plate min-w-0">
-                  <StageCopy accent={ACCENT} meta={t.cv} />
+                  <StageCopy accent={ACCENT} meta={t.cv} compact />
                 </div>
 
                 <div className="w-[220px] shrink-0 text-end">
@@ -290,32 +327,42 @@ export default function VisionRail() {
                 </div>
               </div>
 
-              {/* the arc gets the whole column width — clipped to it, so a card that
-                  has scrolled far off-focus disappears at the column's own edge
-                  instead of drifting, half-faded, over the swarm's side plate */}
+              {/* the arc takes whatever height the header leaves (up to 60vh) and
+                  the whole column width; the cards are fitted to that height
+                  in onScrub, so the focused card is always whole */}
               <div
+                ref={arcRef}
                 dir="ltr"
-                className="relative mt-6 h-[58vh] overflow-hidden [perspective:1700px]"
+                className="relative mt-6 min-h-0 flex-1 max-h-[60vh] [@media(max-height:820px)]:mt-4"
               >
-                {cvProjects.map((p, i) => (
-                  <div
-                    key={p.id}
-                    ref={(el) => {
-                      cardRefs.current[i] = el;
-                    }}
-                    className="absolute left-1/2 top-1/2 w-[min(30vw,440px)] -translate-x-1/2 -translate-y-1/2 will-change-transform"
-                    style={{ transition: "opacity 200ms linear" }}
-                  >
-                    <VisionCard
-                      project={p}
-                      index={i}
-                      lang={lang}
-                      view={t.project.open}
-                      featuredLabel={t.project.featured}
-                      focus
-                    />
-                  </div>
-                ))}
+                {/* the paint layer: a little taller than the arc so the focused
+                    card's glow and shadow aren't sheared off, and faded at the
+                    column's sides so an off-focus card dissolves at the edge —
+                    never cut by a hard line, never over the swarm's side plate */}
+                <div
+                  className="pointer-events-none absolute inset-x-0 -inset-y-12 [perspective:1700px]"
+                  style={{ maskImage: ARC_MASK, WebkitMaskImage: ARC_MASK }}
+                >
+                  {cvProjects.map((p, i) => (
+                    <div
+                      key={p.id}
+                      ref={(el) => {
+                        cardRefs.current[i] = el;
+                      }}
+                      className="absolute left-1/2 top-1/2 w-[min(30vw,440px)] -translate-x-1/2 -translate-y-1/2 will-change-transform"
+                      style={{ transition: "opacity 200ms linear" }}
+                    >
+                      <VisionCard
+                        project={p}
+                        index={i}
+                        lang={lang}
+                        view={t.project.open}
+                        featuredLabel={t.project.featured}
+                        focus
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -331,10 +378,13 @@ export function StageCopy({
   accent,
   meta,
   align = "start",
+  compact = false,
 }: {
   accent: string;
   meta: { index: string; kicker: string; titleA: string; titleHi: string; desc: string };
   align?: "start" | "center";
+  /** tighten the copy on short screens, where it shares the height with a stage below it */
+  compact?: boolean;
 }) {
   const centered = align === "center";
   return (
@@ -343,7 +393,8 @@ export function StageCopy({
         <p
           className={
             "mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] tracking-[0.26em] sm:text-[11px] sm:tracking-[0.3em] ltr " +
-            (centered ? "justify-center" : "")
+            (centered ? "justify-center" : "") +
+            (compact ? " [@media(max-height:820px)]:mb-3" : "")
           }
           style={{ color: accent }}
         >
@@ -353,7 +404,12 @@ export function StageCopy({
         </p>
       </Reveal>
       <Reveal variant="clip" duration={950} delay={80}>
-        <h2 className="text-[clamp(1.75rem,4.2vw,3rem)] font-bold leading-[1.12] text-bone">
+        <h2
+          className={
+            "text-[clamp(1.75rem,4.2vw,3rem)] font-bold leading-[1.12] text-bone" +
+            (compact ? " [@media(max-height:820px)]:text-[clamp(1.75rem,3.2vw,2.5rem)]" : "")
+          }
+        >
           {meta.titleA}
           <span
             className="bg-clip-text text-transparent"
@@ -366,7 +422,11 @@ export function StageCopy({
       <Reveal variant="up" duration={850} delay={180}>
         <p
           className={
-            "mt-5 text-[16px] leading-8 text-bone/85 " + (centered ? "mx-auto max-w-2xl" : "max-w-md")
+            "mt-5 text-[16px] leading-8 text-bone/85 " +
+            (centered ? "mx-auto max-w-2xl" : "max-w-md") +
+            (compact
+              ? " [@media(max-height:820px)]:mt-3 [@media(max-height:820px)]:max-w-xl [@media(max-height:820px)]:text-[15px] [@media(max-height:820px)]:leading-7"
+              : "")
           }
         >
           {meta.desc}
@@ -392,6 +452,16 @@ function VisionCard({
   focus?: boolean;
 }) {
   const rootRef = useRef<HTMLAnchorElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  // A portrait (or near-square) shot in the 16:10 frame would lose most of
+  // itself to object-cover — the PPE still, 448×657, kept only its middle
+  // band. Those are shown whole instead, over a blurred fill of themselves.
+  const [tall, setTall] = useState(false);
+  const checkShape = () => {
+    const img = imgRef.current;
+    if (img && img.naturalWidth) setTall(img.naturalWidth / img.naturalHeight < 1.1);
+  };
+  useEffect(checkShape, [project.image]);
   const rafRef = useRef<number | undefined>(undefined);
   const finePointer = useRef(
     typeof window !== "undefined" &&
@@ -443,12 +513,16 @@ function VisionCard({
       onPointerLeave={handlePointerLeave}
       className={
         "group relative flex cursor-pointer flex-col rounded-2xl border border-bone/12 bg-ink/85 backdrop-blur-md transition-colors duration-300 hover:border-bone/30" +
-        (project.featured ? " mpk-featured" : "")
+        (project.featured ? " mpk-featured" : "") +
+        // the flat phone card clips its own zoomed still; the tilting desktop
+        // card must not (clipping + transform breaks its hit-testing), so its
+        // media box rounds its own corners instead
+        (focus ? "" : " overflow-hidden")
       }
       style={{
         boxShadow: focus ? "0 30px 90px -40px " + project.accent : undefined,
         transform: focus
-          ? "rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))"
+          ? "perspective(1000px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))"
           : undefined,
         transition: focus ? "transform 300ms cubic-bezier(0.22, 1, 0.36, 1), border-color 300ms" : undefined,
       }}
@@ -466,14 +540,35 @@ function VisionCard({
       )}
 
       {/* the read-out — the image stays at full brightness, only the HUD sits over it */}
-      <div data-media className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-t-2xl bg-black">
+      <div
+        data-media
+        className={
+          "relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-t-2xl bg-black" +
+          (focus ? " [@media(max-height:820px)]:aspect-[16/9]" : "")
+        }
+      >
         {project.image ? (
-          <img
-            src={project.image}
-            alt={project.title}
-            loading={index < 2 ? "eager" : "lazy"}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-          />
+          <>
+            {tall && (
+              <img
+                src={project.image}
+                alt=""
+                aria-hidden
+                className="absolute inset-0 h-full w-full scale-125 object-cover opacity-50 blur-2xl"
+              />
+            )}
+            <img
+              ref={imgRef}
+              src={project.image}
+              alt={project.title}
+              loading={index < 2 ? "eager" : "lazy"}
+              onLoad={checkShape}
+              className={
+                "relative h-full w-full transition-transform duration-700 group-hover:scale-[1.03] " +
+                (tall ? "object-contain" : "object-cover")
+              }
+            />
+          </>
         ) : (
           <div
             className="flex h-full w-full items-center justify-center font-display text-6xl font-bold opacity-25"
@@ -501,7 +596,14 @@ function VisionCard({
         </span>
       </div>
 
-      <div className="flex flex-col p-5">
+      <div
+        className={
+          "flex flex-col p-5" +
+          // on a short screen the desktop card trims its copy rather than
+          // shrinking the whole arc further — the full text is one click away
+          (focus ? " [@media(max-height:820px)]:p-4 [&_p]:[@media(max-height:820px)]:line-clamp-2" : "")
+        }
+      >
         <h3 className="text-lg font-bold text-bone sm:text-xl ltr">{project.title}</h3>
         <p className="mt-2.5 line-clamp-3 text-[14px] leading-6 text-bone/85">
           {desc(project, lang)}
