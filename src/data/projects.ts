@@ -15,6 +15,8 @@ export type Project = {
   accent: string;
   /** Marks a project as a must-see highlight — gets the special violet glow treatment. */
   featured?: boolean;
+  /** When the work started (repo creation, ISO 8601) — drives the order everywhere. */
+  created: string;
   /** What sort of work it is — see KINDS. Independent of which chapter shows it. */
   kind: Kind;
   /** The real-world field it serves. */
@@ -85,9 +87,10 @@ export const kindMeta = (k: Kind) => KINDS.find((m) => m.id === k)!;
 
 export type Group = "cv" | "data" | "web";
 
-export const cvProjects: Project[] = [
+const cvList: Project[] = [
   {
     id: "thief",
+    created: "2026-08-25T12:59:45Z",
     kind: "vision",
     domainEn: "Retail security",
     domainFa: "امنیتِ فروشگاه",
@@ -107,6 +110,7 @@ export const cvProjects: Project[] = [
   },
   {
     id: "visual-intelligence-engine",
+    created: "2026-08-16T21:28:04Z",
     kind: "vision",
     domainEn: "Media archives",
     domainFa: "آرشیوِ رسانه",
@@ -125,6 +129,7 @@ export const cvProjects: Project[] = [
   },
   {
     id: "ppe-sentinel",
+    created: "2026-09-24T20:09:49Z",
     kind: "vision",
     domainEn: "Construction safety",
     domainFa: "ایمنیِ کارگاه",
@@ -143,6 +148,7 @@ export const cvProjects: Project[] = [
   },
   {
     id: "pelakx",
+    created: "2026-09-04T23:28:13Z",
     kind: "vision",
     domainEn: "Mobility & traffic",
     domainFa: "حمل‌ونقل و ترافیک",
@@ -161,6 +167,7 @@ export const cvProjects: Project[] = [
   },
   {
     id: "fireguard",
+    created: "2026-08-29T22:29:11Z",
     kind: "vision",
     domainEn: "Fire safety",
     domainFa: "ایمنیِ حریق",
@@ -179,6 +186,7 @@ export const cvProjects: Project[] = [
   },
   {
     id: "pcb-detect",
+    created: "2026-08-23T18:39:03Z",
     kind: "vision",
     domainEn: "Electronics manufacturing",
     domainFa: "تولیدِ الکترونیک",
@@ -197,6 +205,7 @@ export const cvProjects: Project[] = [
   },
   {
     id: "pcb-solder-defects",
+    created: "2026-10-16T08:48:03Z",
     kind: "vision",
     domainEn: "Electronics manufacturing",
     domainFa: "تولیدِ الکترونیک",
@@ -216,6 +225,7 @@ export const cvProjects: Project[] = [
   },
   {
     id: "pcb-bare-defects",
+    created: "2026-10-16T08:48:30Z",
     kind: "vision",
     domainEn: "Electronics manufacturing",
     domainFa: "تولیدِ الکترونیک",
@@ -235,6 +245,7 @@ export const cvProjects: Project[] = [
   },
   {
     id: "pcb-classify",
+    created: "2026-08-23T18:30:13Z",
     kind: "research",
     domainEn: "Electronics manufacturing",
     domainFa: "تولیدِ الکترونیک",
@@ -253,9 +264,10 @@ export const cvProjects: Project[] = [
   },
 ];
 
-export const dataProjects: Project[] = [
+const dataList: Project[] = [
   {
     id: "pointcloud",
+    created: "2026-08-23T22:39:39Z",
     kind: "research",
     domainEn: "Industrial 3D printing",
     domainFa: "چاپِ سه‌بعدیِ صنعتی",
@@ -274,6 +286,7 @@ export const dataProjects: Project[] = [
   },
   {
     id: "ai-template",
+    created: "2026-07-31T10:20:44Z",
     kind: "tooling",
     domainEn: "ML engineering",
     domainFa: "مهندسیِ یادگیری ماشین",
@@ -292,6 +305,7 @@ export const dataProjects: Project[] = [
   },
   {
     id: "code-context-engine",
+    created: "2026-09-09T13:51:10Z",
     kind: "tooling",
     domainEn: "Developer tools",
     domainFa: "ابزارِ توسعه‌دهنده",
@@ -311,6 +325,7 @@ export const dataProjects: Project[] = [
   },
   {
     id: "neuromesh",
+    created: "2026-09-08T14:22:43Z",
     kind: "tooling",
     domainEn: "Developer tools",
     domainFa: "ابزارِ توسعه‌دهنده",
@@ -331,9 +346,10 @@ export const dataProjects: Project[] = [
   },
 ];
 
-export const webProjects: Project[] = [
+const webList: Project[] = [
   {
     id: "homsayeh",
+    created: "2026-08-30T17:31:14Z",
     kind: "product",
     domainEn: "Residential buildings",
     domainFa: "مدیریتِ ساختمان",
@@ -355,6 +371,7 @@ export const webProjects: Project[] = [
   },
   {
     id: "univecity",
+    created: "2026-09-30T10:48:44Z",
     kind: "product",
     domainEn: "Higher education",
     domainFa: "آموزشِ عالی",
@@ -375,6 +392,7 @@ export const webProjects: Project[] = [
   },
   {
     id: "imam-reza-shift",
+    created: "2026-10-13T14:37:15Z",
     kind: "product",
     domainEn: "Healthcare",
     domainFa: "سلامت و درمان",
@@ -395,6 +413,7 @@ export const webProjects: Project[] = [
   },
   {
     id: "b2b",
+    created: "2026-07-06T07:55:16Z",
     kind: "product",
     domainEn: "Cross-border commerce",
     domainFa: "تجارتِ فرامرزی",
@@ -413,6 +432,7 @@ export const webProjects: Project[] = [
   },
   {
     id: "melkai",
+    created: "2026-08-31T00:09:39Z",
     kind: "product",
     domainEn: "Real estate",
     domainFa: "املاک",
@@ -432,13 +452,26 @@ export const webProjects: Project[] = [
   },
 ];
 
+/**
+ * The order everything is shown in: the highlighted (Must-see) projects lead,
+ * then the rest newest first by the day the work started.
+ */
+export const byFeaturedThenNewest = (a: Project, b: Project) =>
+  Number(!!b.featured) - Number(!!a.featured) || b.created.localeCompare(a.created);
+
+export const cvProjects = [...cvList].sort(byFeaturedThenNewest);
+export const dataProjects = [...dataList].sort(byFeaturedThenNewest);
+export const webProjects = [...webList].sort(byFeaturedThenNewest);
+
 export const groups: Record<Group, Project[]> = {
   cv: cvProjects,
   data: dataProjects,
   web: webProjects,
 };
 
-export const allProjects: Project[] = [...cvProjects, ...dataProjects, ...webProjects];
+export const allProjects: Project[] = [...cvProjects, ...dataProjects, ...webProjects].sort(
+  byFeaturedThenNewest
+);
 
 /** Which chapter a project is told in. */
 export const groupOf = (id: string): Group =>
