@@ -24,29 +24,30 @@ const BRANCHES: Branch[] = [
  * with no entry is everyday toolkit and says so, rather than inventing a link.
  */
 const EVIDENCE: Record<string, string[]> = {
-  YOLO: ["ppe-sentinel", "pelakx", "fireguard", "pcb-detect", "pcb-solder-defects", "pcb-bare-defects"],
-  OpenCV: ["pelakx", "pcb-classify"],
-  ByteTrack: ["thief", "ppe-sentinel"],
-  PyTorch: ["pcb-detect", "ai-template"],
-  CNN: ["pcb-detect", "fireguard", "pelakx"],
-  "Transfer Learning": ["pcb-detect"],
-  TensorRT: ["ppe-sentinel"],
-  "scikit-learn": ["pcb-classify"],
+  YOLO: ["thief", "ppe-sentinel", "pelakx", "fireguard", "pcb-detect", "pcb-solder-defects", "pcb-bare-defects", "visual-intelligence-engine"],
+  OpenCV: ["thief", "pelakx", "pcb-classify"],
+  ByteTrack: ["thief", "ppe-sentinel", "pelakx"],
+  // every Ultralytics model above is a PyTorch CNN; the audit (2026-10) read
+  // the frameworks, backbones and fine-tuning steps off each repo's README
+  PyTorch: ["thief", "ppe-sentinel", "pelakx", "fireguard", "pcb-detect", "pcb-solder-defects", "pcb-bare-defects", "visual-intelligence-engine", "ai-template"],
+  CNN: ["thief", "ppe-sentinel", "pelakx", "fireguard", "pcb-detect", "pcb-solder-defects", "pcb-bare-defects", "visual-intelligence-engine", "ai-template"],
+  "Transfer Learning": ["ppe-sentinel", "pelakx", "fireguard", "pcb-detect", "pcb-solder-defects", "pcb-bare-defects", "visual-intelligence-engine", "ai-template"],
+  TensorRT: ["ppe-sentinel", "fireguard"],
+  "scikit-learn": ["pcb-classify", "pointcloud"],
   "Random Forest": ["pcb-classify"],
   "Explainable AI": ["pcb-classify"],
-  NumPy: ["pointcloud", "pcb-classify"],
-  SQL: ["univecity", "homsayeh", "imam-reza-shift"],
+  NumPy: ["pointcloud", "pcb-classify", "ai-template"],
+  SQL: ["univecity", "homsayeh", "imam-reza-shift", "visual-intelligence-engine", "pelakx"],
+  Matplotlib: ["pointcloud"],
   React: ["homsayeh", "univecity", "melkai", "site"],
   TypeScript: ["homsayeh", "univecity", "b2b", "neuromesh", "site"],
   "Three.js": ["site"],
   "Next.js": ["homsayeh", "univecity", "melkai"],
-  Docker: ["univecity", "homsayeh"],
+  Docker: ["univecity", "homsayeh", "pelakx"],
   Git: ["neuromesh", "code-context-engine"],
   MLOps: ["ai-template"],
 };
 
-
-/** Projects behind a discipline, in the site's own order (Must-see first, then newest). */
 function projectsOf(b: Branch) {
   const ids = new Set(b.leaves.flatMap((l) => EVIDENCE[l] ?? []));
   return {
@@ -56,73 +57,59 @@ function projectsOf(b: Branch) {
 }
 const usesTool = (tool: string, id: string) => (EVIDENCE[tool] ?? []).includes(id);
 
+
 type Node = {
   id: string;
   label: string;
+  x: number;
+  y: number;
+  r: number;
   color: string;
   kind: "hub" | "branch" | "leaf";
   parent: number | null;
   branch: number; // index into BRANCHES, -1 for the hub
   seed: number;
-  r: number;
 };
 
-/** Where a node wants to be, how big and how present — per focus state. */
-type Target = { x: number; y: number; s: number; a: number };
-
-const MOTES_PER_EDGE = 3;
-/** Seconds for one pulse to travel hub → branch → leaf. */
-const PULSE_PERIOD = 5200;
-/** Below this box width the graph uses short labels and tighter rings. */
-const COMPACT_W = 640;
-/** Time constant of the glide between layouts — ~0.8s to settle. */
-const GLIDE_MS = 230;
-
+/** A mote riding one edge of the graph. */
 type Mote = { edge: number; t: number; speed: number; size: number };
 
+const MOTES_PER_EDGE = 4;
+/** Seconds for one pulse to travel hub → branch → leaf. */
+const PULSE_PERIOD = 5200;
+/** Below this box width the graph drops its tool labels and the panel leads. */
+const COMPACT_W = 640;
+
 /**
- * The stack as a focus orbit.
+ * The stack as a living graph.
  *
- * At rest the map is quiet: the six disciplines around the centre, each with
- * its tools as unlabelled satellites. Choosing a discipline swaps it with the
- * centre — it glides into the middle, its tools open around it as readable
- * labels, and the hub and the other disciplines step back onto an outer ring.
- * Every node eases to its new place, so nothing ever jumps.
+ * Layout is a radial tree (hub → discipline → tool) computed from the measured
+ * box. Links, nodes and a field of motes that ride the links are painted to
+ * canvas; the labels are real buttons over the top, so they stay sharp,
+ * selectable, focusable and tappable.
  *
- * Hover only lights a path; it never changes what the read-out says. Only a
- * click (or tap, or Enter) commits, and the read-out keeps one steady list of
- * the discipline's projects — choosing a tool dims the ones that don't use it
- * instead of swapping the list out.
+ * Hover (or keyboard focus) traces a node's path to the centre; a click or tap
+ * pins it, and the read-out underneath answers the question the graph raises —
+ * where does this actually show up? — with the projects behind it. On a phone
+ * the graph keeps only its disciplines as words and the read-out does the rest.
  */
 export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
   const { t, lang } = useLang();
   const g = t.about.graph;
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const labelRefs = useRef<(HTMLElement | null)[]>([]);
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const [focus, setFocus] = useState<number | null>(null); // branch index
-  const [tool, setTool] = useState<string | null>(null);
-  const [hover, setHover] = useState<number | null>(null); // node index
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [hover, setHover] = useState<number | null>(null);
+  const [pinned, setPinned] = useState<number | null>(null);
   const compact = size.w > 0 && size.w < COMPACT_W;
 
-  /* ------------------------------------------------------------ nodes */
-  const nodes = useMemo(() => {
-    const list: Node[] = [
-      { id: "hub", label: hub, color: "#f2ece1", kind: "hub", parent: null, branch: -1, seed: 0, r: 9 },
-    ];
-    BRANCHES.forEach((b, bi) => {
-      const bIndex = list.length;
-      list.push({ id: b.key, label: b.label, color: b.color, kind: "branch", parent: 0, branch: bi, seed: bi * 1.7, r: 6 });
-      b.leaves.forEach((leaf, li) =>
-        list.push({
-          id: b.key + "-" + leaf, label: leaf, color: b.color, kind: "leaf",
-          parent: bIndex, branch: bi, seed: bi * 3.1 + li * 0.9, r: 3.4,
-        })
-      );
-    });
-    return list;
-  }, [hub]);
+  const active = hover ?? pinned;
+  const activeRef = useRef<number | null>(null);
+  activeRef.current = active;
+  const lean = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
+  const motes = useRef<Mote[]>([]);
+  const lastT = useRef(0);
 
   /* --------------------------------------------------------- measure */
   useLayoutEffect(() => {
@@ -145,124 +132,148 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
     };
   }, []);
 
-  /* --------------------------------------------------------- targets */
-  const targets = useMemo<Target[]>(() => {
+  /* ---------------------------------------------------------- layout */
+  useEffect(() => {
     const { w, h } = size;
-    if (!w || !h) return [];
+    if (!w || !h) return;
     const small = w < COMPACT_W;
-    const padX = small ? Math.min(46, w * 0.13) : Math.min(90, w * 0.12);
-    const padY = small ? 30 : Math.min(56, h * 0.12);
-    const uw = Math.max(60, w / 2 - padX);
-    const uh = Math.max(50, h / 2 - padY);
+
+    // Room reserved for the labels, which sit outside the node they belong to.
+    // The box is usually far wider than it is tall, so the ring is an ellipse
+    // rather than a circle — that is what keeps the top and bottom rows inside.
+    const padX = small ? Math.min(52, w * 0.15) : Math.min(96, w * 0.14);
+    const padY = small ? 34 : Math.min(64, h * 0.14);
+    const usableW = Math.max(60, w / 2 - padX);
+    const usableH = Math.max(50, h / 2 - padY);
+
     const cx = w / 2;
     const cy = h / 2;
-    const n = BRANCHES.length;
-    const slot = (i: number) => -Math.PI / 2 + (i * Math.PI * 2) / n;
-    const out: Target[] = new Array(nodes.length);
+    const rbx = usableW * (small ? 0.6 : 0.56);
+    const rby = usableH * (small ? 0.5 : 0.54);
+    const rlx = usableW * (small ? 0.42 : 0.52);
+    const rly = usableH * (small ? 0.4 : 0.5);
 
-    if (focus == null) {
-      // rest: disciplines on a ring, tools as satellites fanned outward
-      out[0] = { x: cx, y: cy, s: 1, a: 1 };
-      const sat = small ? 16 : 30;
-      nodes.forEach((nd, i) => {
-        if (nd.kind === "branch") {
-          const a = slot(nd.branch);
-          out[i] = { x: cx + Math.cos(a) * uw * 0.8, y: cy + Math.sin(a) * uh * 0.78, s: 1, a: 1 };
+    const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
+    const inX = (v: number) => clamp(v, padX, w - padX);
+    const inY = (v: number) => clamp(v, padY, h - padY);
+
+    const next: Node[] = [
+      { id: "hub", label: hub, x: cx, y: cy, r: small ? 7 : 10, color: "#f2ece1", kind: "hub", parent: null, branch: -1, seed: 0 },
+    ];
+
+    const sector = (Math.PI * 2) / BRANCHES.length;
+
+    BRANCHES.forEach((b, bi) => {
+      const a = -Math.PI / 2 + bi * sector;
+      const bx = inX(cx + Math.cos(a) * rbx);
+      const by = inY(cy + Math.sin(a) * rby);
+      const bIndex = next.length;
+      next.push({
+        id: b.key, label: small ? b.short : b.label, x: bx, y: by, r: small ? 4.5 : 6,
+        color: b.color, kind: "branch", parent: 0, branch: bi, seed: bi * 1.7,
+      });
+
+      // leaves fan across most of their own sector — wide enough to breathe,
+      // still bounded so neighbouring disciplines never interleave
+      // a branch pointing up or down has the least vertical room for its
+      // tools, so its fan opens wider sideways instead
+      const spread = sector * ((small ? 1.05 : 0.92) + (small ? 0.35 : 0.55) * Math.abs(Math.sin(a)));
+      b.leaves.forEach((leaf, li) => {
+        const tt = b.leaves.length === 1 ? 0.5 : li / (b.leaves.length - 1);
+        const la = a + (tt - 0.5) * spread;
+        next.push({
+          id: b.key + "-" + leaf, label: leaf,
+          x: inX(bx + Math.cos(la) * rlx),
+          y: inY(by + Math.sin(la) * rly),
+          r: small ? 2.6 : 3.2, color: b.color, kind: "leaf", parent: bIndex, branch: bi,
+          seed: bi * 3.1 + li * 0.9,
+        });
+      });
+    });
+
+    // Relax the leaf labels apart — from each other, and away from the
+    // discipline labels, which hold still. Boxes are wide and short, so overlap
+    // is judged per axis and resolved vertically, where there is slack. Phones
+    // show no tool labels, so there is nothing to untangle there.
+    if (!small) {
+      const halfW = (n: Node) =>
+        n.kind === "branch" ? n.label.length * 4.4 + 10 : n.label.length * 3.2 + 14;
+      const labelY = (n: Node) => n.y + (n.kind === "branch" ? 13 : 10);
+      const movable = next.map((n, i) => (n.kind === "leaf" ? i : -1)).filter((i) => i >= 0);
+      const fixed = next.map((n, i) => (n.kind === "branch" ? i : -1)).filter((i) => i >= 0);
+      for (let pass = 0; pass < 60; pass++) {
+        let moved = false;
+        for (let a1 = 0; a1 < movable.length; a1++) {
+          const p = next[movable[a1]];
+          for (let b1 = a1 + 1; b1 < movable.length; b1++) {
+            const q = next[movable[b1]];
+            const needX = halfW(p) + halfW(q) + 6;
+            const dx = p.x - q.x;
+            const dy = labelY(p) - labelY(q);
+            if (Math.abs(dx) >= needX || Math.abs(dy) >= 30) continue;
+            const push = (30 - Math.abs(dy)) / 2 + 0.5;
+            const dir = dy === 0 ? (p.y < cy ? -1 : 1) : Math.sign(dy);
+            p.y = inY(p.y + dir * push);
+            q.y = inY(q.y - dir * push);
+            moved = true;
+          }
+          for (const fi of fixed) {
+            const q = next[fi];
+            const needX = halfW(p) + halfW(q) + 6;
+            const dx = p.x - q.x;
+            const dy = labelY(p) - labelY(q);
+            if (Math.abs(dx) >= needX || Math.abs(dy) >= 30) continue;
+            const dir = dy === 0 ? (p.y < cy ? -1 : 1) : Math.sign(dy);
+            p.y = inY(p.y + dir * (30 - Math.abs(dy) + 1));
+            moved = true;
+          }
         }
-      });
-      nodes.forEach((nd, i) => {
-        if (nd.kind !== "leaf") return;
-        const p = out[nd.parent!];
-        const sibs = BRANCHES[nd.branch].leaves;
-        const k = sibs.indexOf(nd.label);
-        const a = slot(nd.branch) + (k / Math.max(1, sibs.length - 1) - 0.5) * 1.7;
-        out[i] = { x: p.x + Math.cos(a) * sat, y: p.y + Math.sin(a) * sat * 0.9, s: 0.85, a: 0.75 };
-      });
-      return out;
+        if (!moved) break;
+      }
     }
 
-    // focus: the chosen discipline takes the centre and the hub takes its old
-    // slot — a swap, so the eye can follow both. Its tools ring it, labelled.
-    const fbIndex = nodes.findIndex((nd) => nd.kind === "branch" && nd.branch === focus);
-    const ring = (i: number) => ({ x: cx + Math.cos(slot(i)) * uw * 0.92, y: cy + Math.sin(slot(i)) * uh * 0.9 });
-    out[fbIndex] = { x: cx, y: cy, s: 1.7, a: 1 };
-    out[0] = { ...ring(focus), s: 0.8, a: 0.85 };
-    nodes.forEach((nd, i) => {
-      if (nd.kind === "branch" && nd.branch !== focus) out[i] = { ...ring(nd.branch), s: 0.8, a: 0.5 };
-    });
-    const leaves = BRANCHES[focus].leaves;
-    // a tall inner ellipse keeps the tool labels clear of the outer ring's
-    const lrx = small ? 0.8 : 0.42;
-    const lry = small ? 0.7 : 0.56;
-    nodes.forEach((nd, i) => {
-      if (nd.kind !== "leaf") return;
-      if (nd.branch === focus) {
-        const k = leaves.indexOf(nd.label);
-        const a = -Math.PI / 2 + ((k + 0.5) * Math.PI * 2) / leaves.length;
-        out[i] = { x: cx + Math.cos(a) * uw * lrx, y: cy + Math.sin(a) * uh * lry, s: 1.5, a: 1 };
-      } else {
-        // folded back into its discipline
-        const p = out[nd.parent!];
-        out[i] = { x: p.x, y: p.y, s: 0.3, a: 0 };
-      }
-    });
-    return out;
-  }, [size, focus, nodes]);
+    setNodes(next);
 
-  /* ------------------------------------------- live (eased) positions */
-  const live = useRef<Target[]>([]);
-  useLayoutEffect(() => {
-    if (!targets.length) return;
-    // first layout (or a resize) lands in place; focus changes glide
-    if (live.current.length !== targets.length) live.current = targets.map((tg) => ({ ...tg }));
-  }, [targets]);
-
-  const motes = useRef<Mote[]>([]);
-  useEffect(() => {
+    const edges = next.map((n, i) => (n.parent == null ? -1 : i)).filter((i) => i >= 0);
     const list: Mote[] = [];
-    nodes.forEach((nd, i) => {
-      if (nd.parent == null) return;
+    edges.forEach((e) => {
       for (let k = 0; k < MOTES_PER_EDGE; k++) {
-        list.push({ edge: i, t: (k / MOTES_PER_EDGE + Math.random() * 0.2) % 1, speed: 0.04 + Math.random() * 0.05, size: 0.9 + Math.random() * 1 });
+        list.push({
+          edge: e,
+          t: (k / MOTES_PER_EDGE + Math.random() * 0.2) % 1,
+          speed: 0.045 + Math.random() * 0.05,
+          size: 0.9 + Math.random() * 1.1,
+        });
       }
     });
     motes.current = list;
-  }, [nodes]);
+  }, [size, hub]);
 
-  /** What's lit: the hovered node's path, else the focused discipline (and tool). */
+
+
+  /** A node's path to the centre, plus — for a discipline — all its tools. */
   const litFor = useCallback(
-    (hv: number | null) => {
+    (a: number | null) => {
       const lit = new Set<number>();
-      const add = (i: number) => {
-        let cur: number | null = i;
-        while (cur != null) {
-          lit.add(cur);
-          cur = nodes[cur].parent;
-        }
-      };
-      if (hv != null && nodes[hv]) {
-        add(hv);
-        if (nodes[hv].kind === "branch") nodes.forEach((nd, i) => nd.parent === hv && lit.add(i));
-      } else if (focus != null) {
-        const fb = nodes.findIndex((nd) => nd.kind === "branch" && nd.branch === focus);
-        lit.add(fb);
-        nodes.forEach((nd, i) => nd.parent === fb && lit.add(i));
+      if (a == null || !nodes[a]) return lit;
+      let cur: number | null = a;
+      while (cur != null) {
+        lit.add(cur);
+        cur = nodes[cur].parent;
       }
+      if (nodes[a].kind === "branch") nodes.forEach((n, i) => n.parent === a && lit.add(i));
       return lit;
     },
-    [nodes, focus]
+    [nodes]
   );
-
-  const state = useRef({ hover, tool, focus, compact });
-  state.current = { hover, tool, focus, compact };
 
   /* ------------------------------------------------------------ paint */
   const draw = useCallback(
     (time: number, dt: number) => {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
-      const L = live.current;
-      if (!canvas || !ctx || !targets.length || L.length !== targets.length) return;
+      if (!canvas || !ctx || !nodes.length) return;
+
       const { w, h } = size;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
@@ -272,151 +283,136 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
 
-      // glide every node toward its target — exponential, so it eases out
-      const k = dt <= 0 ? 1 : 1 - Math.exp(-dt / GLIDE_MS);
-      L.forEach((c, i) => {
-        const tg = targets[i];
-        c.x += (tg.x - c.x) * k;
-        c.y += (tg.y - c.y) * k;
-        c.s += (tg.s - c.s) * k;
-        c.a += (tg.a - c.a) * k;
-      });
+      // ease the lean so the graph glides rather than snaps
+      lean.current.x += (lean.current.tx - lean.current.x) * Math.min(1, dt / 260);
+      lean.current.y += (lean.current.ty - lean.current.y) * Math.min(1, dt / 260);
 
-      const { hover: hv, tool: tl } = state.current;
-      const lit = litFor(hv);
-      const dim = lit.size > 0;
-      const depth = (nd: Node) => (nd.kind === "hub" ? 0.4 : nd.kind === "branch" ? 0.7 : 1);
-      const tier = (nd: Node) => (nd.kind === "hub" ? 0 : nd.kind === "branch" ? 1 : 2);
+      // live position: layout spot + seeded float + a lean toward the pointer
+      const depth = (n: Node) => (n.kind === "hub" ? 0.35 : n.kind === "branch" ? 0.7 : 1);
+      const tier = (n: Node) => (n.kind === "hub" ? 0 : n.kind === "branch" ? 1 : 2);
+
+      // a charge leaves the hub and travels outward on a loop; each ring lights
+      // as it passes, which is what makes the graph read as powered rather than drawn
       const wave = ((time % PULSE_PERIOD) / PULSE_PERIOD) * 3.1;
-      const charge = (nd: Node) => {
-        const d = wave - tier(nd);
+      const charge = (n: Node) => {
+        const d = wave - tier(n);
         return Math.exp(-(d * d) / 0.14);
       };
-      // a slow breath, never a lurch
-      const px = (i: number) => L[i].x + Math.sin(time * 0.0003 + nodes[i].seed) * 3 * depth(nodes[i]);
-      const py = (i: number) => L[i].y + Math.cos(time * 0.00036 + nodes[i].seed * 1.3) * 3 * depth(nodes[i]);
+      const px = (n: Node) =>
+        n.x + Math.sin(time * 0.00034 + n.seed) * 5 * depth(n) + lean.current.x * 10 * depth(n);
+      const py = (n: Node) =>
+        n.y + Math.cos(time * 0.00041 + n.seed * 1.3) * 5 * depth(n) + lean.current.y * 8 * depth(n);
+
+      const lit = litFor(activeRef.current);
+      const dimOthers = lit.size > 0;
 
       /* links */
-      nodes.forEach((nd, i) => {
-        if (nd.parent == null) return;
-        const p = nd.parent;
-        const alpha = Math.min(L[i].a, L[p].a);
-        if (alpha < 0.02) return;
-        const on = lit.has(i) && lit.has(p);
+      nodes.forEach((n, i) => {
+        if (n.parent == null) return;
+        const p = nodes[n.parent];
+        const on = lit.has(i) && lit.has(n.parent);
         ctx.beginPath();
         ctx.moveTo(px(p), py(p));
-        ctx.lineTo(px(i), py(i));
-        const q = Math.max(charge(nd), charge(nodes[p]));
-        ctx.globalAlpha = alpha;
-        ctx.strokeStyle = on ? nd.color : "rgba(242,236,225," + ((0.08 + q * 0.14) * (dim ? 0.55 : 1)).toFixed(3) + ")";
-        ctx.lineWidth = on ? 1.4 : 0.8 + q * 0.4;
+        ctx.lineTo(px(n), py(n));
+        const q = Math.max(charge(n), charge(p));
+        ctx.strokeStyle = on
+          ? n.color
+          : "rgba(242,236,225," + ((0.09 + q * 0.16) * (dimOthers ? 0.6 : 1)).toFixed(3) + ")";
+        ctx.lineWidth = on ? 1.5 : 0.9 + q * 0.5;
         ctx.stroke();
       });
-      ctx.globalAlpha = 1;
 
-      /* motes */
+      /* motes riding the links — the graph's own weather */
       ctx.globalCompositeOperation = "lighter";
       for (const mo of motes.current) {
-        const nd = nodes[mo.edge];
-        const p = nd.parent!;
-        const alpha = Math.min(L[mo.edge].a, L[p].a);
-        if (alpha < 0.05) continue;
-        const on = lit.has(mo.edge) && lit.has(p);
-        mo.t += (mo.speed * (on ? 2.6 : 1) * Math.max(dt, 0)) / 1000;
+        const n = nodes[mo.edge];
+        if (!n || n.parent == null) continue;
+        const p = nodes[n.parent];
+        const on = lit.has(mo.edge) && lit.has(n.parent);
+        mo.t += (mo.speed * (on ? 3.2 : 1) * dt) / 1000;
         if (mo.t > 1) mo.t -= 1;
-        const x = px(p) + (px(mo.edge) - px(p)) * mo.t;
-        const y = py(p) + (py(mo.edge) - py(p)) * mo.t;
-        const fade = Math.sin(mo.t * Math.PI) * (on || !dim ? 1 : 0.45) * alpha;
-        const r = mo.size * (on ? 1.9 : 1.15);
+
+        const x = px(p) + (px(n) - px(p)) * mo.t;
+        const y = py(p) + (py(n) - py(p)) * mo.t;
+        // fade in and out at the ends so they appear to enter and leave the wire
+        const fade = Math.sin(mo.t * Math.PI) * (on || !dimOthers ? 1 : 0.5);
+        const r = mo.size * (on ? 2.1 : 1.25);
+
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = on ? "#ffffff" : nd.color;
-        ctx.globalAlpha = (on ? 0.9 : 0.4) * fade;
+        ctx.fillStyle = on ? "#ffffff" : n.color;
+        ctx.globalAlpha = (on ? 0.95 : 0.42 + charge(n) * 0.4) * fade;
         ctx.fill();
+
         ctx.beginPath();
         ctx.arc(x, y, r * 3, 0, Math.PI * 2);
-        ctx.fillStyle = nd.color;
-        ctx.globalAlpha = (on ? 0.2 : 0.08) * fade;
+        ctx.fillStyle = n.color;
+        ctx.globalAlpha = (on ? 0.22 : 0.09) * fade;
         ctx.fill();
       }
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "source-over";
 
       /* nodes */
-      nodes.forEach((nd, i) => {
-        const c = L[i];
-        if (c.a < 0.02) return;
-        const on = lit.has(i) || (nd.kind === "leaf" && nd.label === tl && nd.branch === state.current.focus);
-        const x = px(i);
-        const y = py(i);
-        const q = charge(nd);
-        const r = nd.r * c.s;
+      nodes.forEach((n, i) => {
+        const on = lit.has(i);
+        const x = px(n);
+        const y = py(n);
 
-        if (nd.kind === "hub" || (nd.kind === "branch" && nd.branch === state.current.focus)) {
-          for (let k2 = 0; k2 < 2; k2++) {
-            const pulse = (time * 0.00022 + k2 * 0.5) % 1;
+        const q = charge(n);
+
+        if (n.kind === "hub") {
+          for (let k = 0; k < 2; k++) {
+            const pulse = (time * 0.00022 + k * 0.5) % 1;
             ctx.beginPath();
-            ctx.arc(x, y, r + 6 + pulse * (w < COMPACT_W ? 26 : 42), 0, Math.PI * 2);
-            ctx.strokeStyle = nd.kind === "hub" ? "rgba(242,236,225,1)" : nd.color;
-            ctx.globalAlpha = 0.18 * (1 - pulse) * c.a;
+            ctx.arc(x, y, n.r + 6 + pulse * (w < COMPACT_W ? 28 : 46), 0, Math.PI * 2);
+            ctx.strokeStyle = "rgba(242,236,225," + (0.18 * (1 - pulse)).toFixed(3) + ")";
             ctx.lineWidth = 1;
             ctx.stroke();
           }
         }
-        // resting tools stay crisp points; only lit ones glow
-        const halo = Math.max(nd.kind === "leaf" ? 0 : q * 0.7, on ? 0.85 : 0);
-        if (halo > 0.02) {
+
+        // the halo the charge leaves behind
+        if (q > 0.02 || on) {
+          const halo = Math.max(q, on ? 0.85 : 0);
           ctx.beginPath();
-          ctx.arc(x, y, r * (2.4 + halo * 2), 0, Math.PI * 2);
-          ctx.fillStyle = nd.color;
-          ctx.globalAlpha = halo * 0.15 * c.a;
+          ctx.arc(x, y, n.r * (2.6 + halo * (w < COMPACT_W ? 1.4 : 2.4)), 0, Math.PI * 2);
+          ctx.fillStyle = n.color;
+          ctx.globalAlpha = halo * 0.16;
           ctx.fill();
+          ctx.globalAlpha = 1;
         }
+
         ctx.beginPath();
-        ctx.arc(x, y, r * (on ? 1.3 : 1), 0, Math.PI * 2);
-        ctx.fillStyle = on || nd.kind !== "leaf" ? nd.color : "rgba(242,236,225,0.6)";
-        ctx.globalAlpha = c.a * (on ? 1 : 0.85);
+        ctx.arc(x, y, n.r * (on ? 1.45 : 1 + q * 0.35), 0, Math.PI * 2);
+        ctx.fillStyle = on ? n.color : n.kind === "leaf" ? "rgba(242,236,225,0.45)" : n.color;
+        ctx.globalAlpha = on ? 1 : Math.min(1, (n.kind === "leaf" ? 0.72 : 0.85) + q * 0.3);
         ctx.fill();
         ctx.globalAlpha = 1;
-
-        // the labels are DOM buttons riding the same eased positions
-        const el = labelRefs.current[i];
-        if (el) {
-          const off = nd.kind === "leaf" ? r + 7 : r + 8;
-          el.style.transform = "translate3d(" + x.toFixed(1) + "px," + (y + off).toFixed(1) + "px,0) translateX(-50%)";
-        }
       });
     },
-    [nodes, size, targets, litFor]
+    [nodes, size, litFor]
   );
 
-  // land the labels before first paint, and on every layout change
-  useLayoutEffect(() => {
-    if (targets.length) draw(performance.now(), 0.0001);
-  }, [targets, draw]);
-
   useEffect(() => {
-    if (!targets.length) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      live.current = targets.map((tg) => ({ ...tg }));
-      draw(0, 0);
-      return;
-    }
+    if (!nodes.length) return;
+    draw(0, 16);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Only animate while on screen. Left running, this loop competed with
+    // the swarm for frames right at the first chapter handover ("01"),
+    // which sits just below it — the one numeral that used to stutter.
     let raf = 0;
     let visible = false;
-    let last = 0;
     const loop = (tm: number) => {
       raf = visible ? requestAnimationFrame(loop) : 0;
       if (document.hidden || !visible) return;
-      const dt = last ? Math.min(50, tm - last) : 16;
-      last = tm;
+      const dt = lastT.current ? Math.min(50, tm - lastT.current) : 16;
+      lastT.current = tm;
       draw(tm, dt);
     };
-    // only animate on screen — it shares frames with the swarm
     const io = new IntersectionObserver(([e]) => {
       visible = e.isIntersecting;
-      last = 0;
+      lastT.current = 0;
       if (visible && !raf) raf = requestAnimationFrame(loop);
     });
     if (boxRef.current) io.observe(boxRef.current);
@@ -424,148 +420,159 @@ export default function SkillGraph({ hub = "MPK" }: { hub?: string }) {
       io.disconnect();
       cancelAnimationFrame(raf);
     };
-  }, [draw, targets]);
+  }, [draw, nodes.length]);
 
-  // reduced motion: repaint on every state change
+  // reduced motion paints once per change instead of every frame
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches && targets.length) draw(0, 0);
-  }, [hover, tool, draw, targets.length]);
+    if (nodes.length && window.matchMedia("(prefers-reduced-motion: reduce)").matches) draw(0, 16);
+  }, [active, draw, nodes.length]);
 
-  /* ----------------------------------------------------------- actions */
-  const choose = useCallback((bi: number | null) => {
-    setFocus((f) => (f === bi ? null : bi));
-    setTool(null);
-    setHover(null);
-  }, []);
-  const pickTool = useCallback((leaf: string) => setTool((tl) => (tl === leaf ? null : leaf)), []);
+  /* -------------------------------------------------------- pointer */
+  const nearest = useCallback(
+    (x: number, y: number, radius: number) => {
+      let best: number | null = null;
+      let bestD = radius;
+      nodes.forEach((n, i) => {
+        if (n.kind === "hub") return;
+        if (compact && n.kind === "leaf") return; // unlabelled dots aren't targets
+        const d = Math.hypot(n.x - x, n.y - y);
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      });
+      return best;
+    },
+    [nodes, compact]
+  );
 
-  // clicking the canvas itself — not a label — goes back to the overview
-  const onBoxClick = (e: React.MouseEvent) => {
-    if ((e.target as Element).closest("button")) return;
-    if (focus != null) choose(null);
-  };
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el || !nodes.length) return;
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return; // touch has no hover — it taps
+      const r = el.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      lean.current.tx = (x / r.width - 0.5) * 2;
+      lean.current.ty = (y / r.height - 0.5) * 2;
+      setHover(nearest(x, y, 96));
+    };
+    const onLeave = () => {
+      setHover(null);
+      lean.current.tx = 0;
+      lean.current.ty = 0;
+    };
+    // a click or tap on the canvas pins whatever is near it; on nothing, unpins
+    const onClick = (e: MouseEvent) => {
+      // the labels are buttons with their own handler; this native listener
+      // runs before React sees the click, so it has to step aside for them
+      if ((e.target as Element).closest("button")) return;
+      const r = el.getBoundingClientRect();
+      const hit = nearest(e.clientX - r.left, e.clientY - r.top, compact ? 44 : 96);
+      setPinned((p) => (hit == null || hit === p ? null : hit));
+    };
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerleave", onLeave);
+    el.addEventListener("click", onClick);
+    return () => {
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerleave", onLeave);
+      el.removeEventListener("click", onClick);
+    };
+  }, [nodes, nearest, compact]);
 
-  const fb = focus != null ? BRANCHES[focus] : null;
+  const pin = (i: number) => setPinned((p) => (p === i ? null : i));
+  const lit = useMemo(() => litFor(active), [litFor, active]);
+  const pinnedNode = pinned != null ? nodes[pinned] ?? null : null;
 
+  // Desktop: graph and read-out side by side, so the whole act — the map and
+  // what it means — reads in a single screen instead of a scroll apart.
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)] lg:[@media(min-height:760px)]:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-stretch lg:gap-10">
+    <div className="lg:grid lg:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)] lg:[@media(min-height:760px)]:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-center lg:gap-10">
       <div
         ref={boxRef}
-        onClick={onBoxClick}
-        onPointerLeave={() => setHover(null)}
         className="relative w-full select-none overflow-hidden rounded-3xl"
-        style={{ height: compact ? "clamp(320px, 50svh, 400px)" : "clamp(400px, min(76vh, calc(100vh - 250px)), 760px)" }}
+        style={{ height: compact ? "clamp(300px, 46svh, 380px)" : "clamp(400px, min(76vh, calc(100vh - 250px)), 760px)" }}
       >
-        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" style={{ width: size.w, height: size.h }} aria-hidden />
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 h-full w-full"
+          style={{ width: size.w, height: size.h }}
+          aria-hidden
+        />
 
-        {nodes.map((nd, i) => {
-          if (nd.kind === "hub") {
+        {nodes.map((n, i) => {
+          if (n.kind === "hub") {
             return (
-              <button
-                key={nd.id}
-                ref={(el) => {
-                  labelRefs.current[i] = el;
-                }}
-                type="button"
-                data-cursor-plain
-                onClick={() => choose(null)}
-                tabIndex={focus == null ? -1 : 0}
-                className="absolute left-0 top-0 whitespace-nowrap rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-[0.34em] text-bone outline-none ltr focus-visible:ring-1 focus-visible:ring-bone/50"
-                style={{
-                  textShadow: "0 1px 10px rgba(10,9,8,0.9)",
-                  cursor: focus == null ? "default" : "pointer",
-                  opacity: compact && focus != null ? 0 : 1,
-                  transition: "opacity 400ms",
-                }}
+              <span
+                key={n.id}
+                className="pointer-events-none absolute -translate-x-1/2 font-mono text-[10px] font-bold tracking-[0.34em] text-bone ltr"
+                style={{ left: n.x, top: n.y + 22 }}
               >
-                {nd.label}
-              </button>
+                {n.label}
+              </span>
             );
           }
-          const isFocusBranch = nd.kind === "branch" && nd.branch === focus;
-          if (nd.kind === "branch") {
-            const b = BRANCHES[nd.branch];
-            const lit = hover === i || isFocusBranch;
-            const quiet = focus != null && !isFocusBranch;
-            return (
-              <button
-                key={nd.id}
-                ref={(el) => {
-                  labelRefs.current[i] = el;
-                }}
-                type="button"
-                data-cursor-plain
-                onClick={() => choose(nd.branch)}
-                onPointerEnter={(e) => e.pointerType === "mouse" && setHover(i)}
-                onPointerLeave={() => setHover(null)}
-                onFocus={(e) => e.currentTarget.matches(":focus-visible") && setHover(i)}
-                onBlur={() => setHover(null)}
-                aria-pressed={isFocusBranch}
-                className="absolute left-0 top-0 whitespace-nowrap rounded-md px-2 py-1 font-mono font-bold outline-none transition-[color,opacity,font-size] duration-500 ltr focus-visible:ring-1 focus-visible:ring-bone/50"
-                style={{
-                  opacity: compact && quiet ? 0 : 1,
-                  pointerEvents: compact && quiet ? "none" : "auto",
-                  fontSize: isFocusBranch ? (compact ? 12 : 14) : compact ? 10 : 10.5,
-                  letterSpacing: compact ? "0.16em" : "0.26em",
-                  color: lit ? b.color : quiet ? "rgba(242,236,225,0.42)" : "rgba(242,236,225,0.85)",
-                  textShadow: "0 1px 12px rgba(10,9,8,0.95)",
-                }}
-              >
-                {compact ? b.short : b.label}
-              </button>
-            );
-          }
-          // tool labels exist only around the focused discipline
-          const shown = nd.branch === focus;
-          const picked = shown && tool === nd.label;
-          const count = (EVIDENCE[nd.label] ?? []).filter((id) => id !== "site").length;
+          if (compact && n.kind === "leaf") return null;
+          const on = lit.has(i);
+          const branch = n.kind === "branch";
           return (
             <button
-              key={nd.id}
-              ref={(el) => {
-                labelRefs.current[i] = el;
-              }}
+              key={n.id}
               type="button"
               data-cursor-plain
-              tabIndex={shown ? 0 : -1}
-              aria-hidden={!shown}
-              aria-pressed={picked}
-              onClick={() => pickTool(nd.label)}
-              onPointerEnter={(e) => e.pointerType === "mouse" && setHover(i)}
-              onPointerLeave={() => setHover(null)}
-              className="absolute left-0 top-0 flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 font-mono outline-none backdrop-blur-sm transition-[opacity,color,background-color,border-color] duration-500 ltr focus-visible:ring-1 focus-visible:ring-bone/50"
+              onClick={() => pin(i)}
+              onFocus={(e) => e.currentTarget.matches(":focus-visible") && setHover(i)}
+              onBlur={() => setHover(null)}
+              aria-pressed={pinned === i}
+              className="absolute -translate-x-1/2 whitespace-nowrap rounded-md px-1.5 py-0.5 font-mono outline-none transition-colors duration-200 ltr focus-visible:ring-1 focus-visible:ring-bone/50"
               style={{
-                opacity: shown ? 1 : 0,
-                pointerEvents: shown ? "auto" : "none",
-                transitionDelay: shown ? "220ms" : "0ms",
-                fontSize: compact ? 10.5 : 12,
-                color: picked ? "#0a0908" : nd.color,
-                background: picked ? nd.color : "rgba(10,9,8,0.72)",
-                borderColor: picked ? nd.color : "color-mix(in oklab, " + nd.color + " 45%, transparent)",
+                left: n.x,
+                top: n.y + (branch ? 12 : 8),
+                fontSize: branch ? (compact ? 10.5 : 10) : 10.5,
+                letterSpacing: branch ? (compact ? "0.18em" : "0.28em") : "0.02em",
+                fontWeight: branch ? 700 : 400,
+                color: on
+                  ? n.color
+                  : active != null
+                    ? "rgba(242,236,225,0.34)"
+                    : branch
+                      ? "rgba(242,236,225,0.82)"
+                      : "rgba(242,236,225,0.56)",
+                textShadow: "0 1px 10px rgba(10,9,8,0.9)",
               }}
             >
-              {nd.label}
-              {count > 0 && <span className="opacity-60">{digits(count, lang)}</span>}
+              {n.label}
             </button>
           );
         })}
       </div>
 
+      {/* the read-out follows only what is pinned — hovering the tree lights
+          paths but never swaps the list out from under the reader */}
       <ReadOut
-        branch={fb}
-        tool={tool}
+        branch={pinnedNode && pinnedNode.branch >= 0 ? BRANCHES[pinnedNode.branch] : null}
+        tool={pinnedNode?.kind === "leaf" ? pinnedNode.label : null}
+        focus={pinnedNode && pinnedNode.branch >= 0 ? pinnedNode.branch : null}
+        compact={compact}
         lang={lang}
         strings={g}
-        compact={compact}
-        onBranch={(bi) => choose(bi)}
-        onTool={pickTool}
-        onClear={() => choose(null)}
-        focus={focus}
+        onBranch={(bi) => pin(nodes.findIndex((n) => n.kind === "branch" && n.branch === bi))}
+        onTool={(leaf) => {
+          const b = pinnedNode ? pinnedNode.branch : -1;
+          const i = nodes.findIndex((n) => n.kind === "leaf" && n.branch === b && n.label === leaf);
+          // picking the pinned tool again steps back to its discipline
+          setPinned(i === pinned ? nodes.findIndex((n) => n.kind === "branch" && n.branch === b) : i);
+        }}
+        onClear={() => {
+          setPinned(null);
+          setHover(null);
+        }}
       />
     </div>
   );
 }
-
 /* ------------------------------------------------------------ read-out */
 
 type GraphStrings = {
@@ -610,6 +617,7 @@ function ReadOut({
   const listRef = useRef<HTMLDivElement>(null);
   const { projects, site } = useMemo(() => (b ? projectsOf(b) : { projects: [], site: false }), [b]);
   const toolCount = BRANCHES.reduce((s, br) => s + br.leaves.length, 0);
+  const maxPer = Math.max(...BRANCHES.map((br) => projectsOf(br).projects.length));
   const projectCount = new Set(Object.values(EVIDENCE).flat().filter((id) => id !== "site")).size;
   const labelCls = "font-mono text-dim " + (lang === "fa" ? "text-[11px]" : "text-[9.5px] tracking-[0.28em]");
 
@@ -680,7 +688,7 @@ function ReadOut({
                     <span className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-bone/8">
                       <span
                         className="absolute inset-y-0 start-0 rounded-full transition-[width] duration-700"
-                        style={{ width: Math.max(8, (n / 9) * 100) + "%", background: br.color, opacity: 0.8 }}
+                        style={{ width: Math.max(8, (n / maxPer) * 100) + "%", background: br.color, opacity: 0.8 }}
                       />
                     </span>
                     <span className="w-5 shrink-0 text-end font-mono text-[11px] tabular-nums text-bone/80">{digits(n, lang)}</span>
