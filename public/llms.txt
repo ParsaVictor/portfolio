@@ -37,9 +37,45 @@ datasets and training behind them, and the web front ends that put them in
 front of people.
 
 Core stack: YOLO (v8/11/26), PyTorch, OpenCV, Random Forest / classical ML,
-TypeScript, React, Next.js.
+Rust (MCP tooling), TypeScript, React, Next.js, Hono, PostgreSQL,
+Cloudflare Workers/D1, Expo (React Native).
+
+The work falls into four kinds, and the site's index filters by them:
+
+1. Vision systems — camera in, decision out (PelakX, FireGuard, PPE
+   Sentinel, Thief detection, Visual Intelligence Engine, PCB detection).
+2. Research & algorithms — point-cloud curve reconstruction, explainable
+   PCB classification.
+3. AI developer tooling — Code Context Engine, NeuroMesh (contributor),
+   AI Project Template.
+4. Products & platforms — Homsayeh, UniVecity, Hospital Shift Intelligence,
+   Melk AI, B2B Marketplace.
 
 ## Selected projects
+
+- **Homsayeh — smart building platform** — neighbours register their
+  building, verify each other and run charges, rules, repairs, votes,
+  amenity bookings and guests together. Next.js 16 web + PWA, Expo Android
+  app, Hono API on Cloudflare Workers + D1; FastAPI + PostgreSQL twin.
+  Private repo; live: https://homsayeh.eshop3.pages.dev
+
+- **UniVecity — faculty portal** — Persian RTL portal for Razi University's
+  Faculty of Computer & Electrical Engineering: Hono API on Cloudflare and
+  Docker/PostgreSQL, OIDC SSO, 68 automated tests. Private repo; live:
+  https://razi-university.pages.dev
+
+- **Hospital Shift Intelligence** — shift-management demo for Imam Reza
+  Hospital, Kermanshah: fairness-aware scheduling engine, multi-step
+  approvals, hash-chained audit log, RBAC, offline, Jalali calendar.
+  Private repo; live: https://imam-reza-shift.1-parsa-karkooti.workers.dev
+
+- **Code Context Engine** — local-first MCP context engine in Rust that
+  sends AI coding agents folded evidence packets instead of whole files.
+  https://github.com/ParsaVictor/code-context-engine
+
+- **NeuroMesh (contributor)** — biomimetic MCP context engine; contributed
+  project isolation, graph call resolution, TypeScript parsing and the 3D
+  dashboard UX. https://github.com/pinoox/neuromesh
 
 - **PelakX** — multi-country license-plate intelligence (ALPR): real-time
   detection, tracking, script-aware OCR and plate-category recognition,

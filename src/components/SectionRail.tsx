@@ -5,7 +5,8 @@ import { onScroll } from "../scroll/scrollStore";
 import { clamp } from "../lib/num";
 import { scrollToId } from "../scroll/useSmoothScroll";
 
-const IDS = ["hero", "cv", "data", "web", "contact"] as const;
+const IDS = ["hero", "cv", "data", "web", "index", "contact"] as const;
+const COLORS: Record<(typeof IDS)[number], string> = { ...STAGE_COLORS, index: "#8fd67a" };
 
 export default function SectionRail() {
   const { t } = useLang();
@@ -28,7 +29,7 @@ export default function SectionRail() {
     });
   }, []);
 
-  const labels = [t.rail.hero, t.rail.cv, t.rail.data, t.rail.web, t.rail.contact];
+  const labels = [t.rail.hero, t.rail.cv, t.rail.data, t.rail.web, t.rail.index, t.rail.contact];
 
   return (
     <nav className="fixed start-6 top-1/2 z-40 hidden -translate-y-1/2 flex-col items-center gap-5 lg:flex">
@@ -41,7 +42,7 @@ export default function SectionRail() {
       </div>
       {IDS.map((id, i) => {
         const on = active === i;
-        const color = STAGE_COLORS[id];
+        const color = COLORS[id];
         return (
           <button
             key={id}

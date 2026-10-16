@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Globe, Star, X } from "lucide-react";
+import { ArrowUpRight, Globe, Lock, Star, X } from "lucide-react";
 import { GithubIcon } from "./icons";
 import ProjectCover from "./ProjectCover";
 import { useLang } from "../i18n/LangProvider";
-import { desc } from "../data/projects";
+import { desc, domain, groupOf, kindMeta } from "../data/projects";
 import { closeProject, useActiveProject } from "../state/projectModal";
 import { setScrollLocked } from "../scroll/useSmoothScroll";
 import { digits } from "../lib/num";
@@ -148,11 +148,21 @@ export default function ProjectModal() {
           data-lenis-prevent
           className="mpk-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5 sm:px-7"
         >
-          <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.26em] text-dim ltr">
-            <Star size={10} fill="currentColor" style={{ color: accent }} />
-            {digits(project.stars, lang)}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] tracking-[0.26em] text-dim">
+            {project.access !== "private" && (
+              <>
+                <Star size={10} fill="currentColor" style={{ color: accent }} />
+                <span className="ltr">{digits(project.stars, lang)}</span>
+                <span>·</span>
+              </>
+            )}
+            <span style={{ color: accent }}>{t[groupOf(project.id)].kicker}</span>
             <span>·</span>
-            <span style={{ color: accent }}>{t[groupOf(project.id)]?.kicker ?? ""}</span>
+            <span style={{ color: kindMeta(project.kind).color }}>
+              {lang === "fa" ? kindMeta(project.kind).fa : kindMeta(project.kind).en}
+            </span>
+            <span>·</span>
+            <span className="text-bone/70">{domain(project, lang)}</span>
           </div>
 
           <h2 className="mt-2 text-xl font-bold leading-tight text-bone sm:text-2xl ltr">
@@ -175,6 +185,28 @@ export default function ProjectModal() {
 
         {/* ── actions stay put, whatever the copy does ────────────────── */}
         <div className="flex shrink-0 flex-wrap gap-2.5 border-t border-bone/10 bg-ink-2/95 px-6 py-4 sm:px-7">
+          {project.access === "private" ? (
+            <>
+              {project.website && (
+                <a
+                  href={project.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-cursor-hover
+                  className="flex items-center gap-2 rounded-full bg-bone px-5 py-2.5 text-[13px] font-bold text-ink transition-transform hover:scale-[1.03]"
+                >
+                  <Globe size={14} />
+                  {t.project.live}
+                  <ArrowUpRight size={13} />
+                </a>
+              )}
+              <span className="flex items-center gap-2 rounded-full border border-bone/12 px-5 py-2.5 text-[13px] font-medium text-dim">
+                <Lock size={13} />
+                {t.project.privateRepo}
+              </span>
+            </>
+          ) : (
+          <>
           <a
             href={project.url}
             target="_blank"
@@ -206,15 +238,11 @@ export default function ProjectModal() {
               {t.project.websiteSoon}
             </span>
           )}
+          </>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-/** Which chapter a project belongs to, for the kicker line. */
-function groupOf(id: string): "cv" | "data" | "web" {
-  if (["pointcloud", "ai-template", "neuromesh"].includes(id)) return "data";
-  if (["b2b", "melkai"].includes(id)) return "web";
-  return "cv";
-}

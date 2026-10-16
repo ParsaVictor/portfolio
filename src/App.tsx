@@ -13,6 +13,7 @@ import AboutStage from "./components/AboutStage";
 import VisionRail from "./components/VisionRail";
 import DataConsole from "./components/DataConsole";
 import WebStack from "./components/WebStack";
+import WorkIndex from "./components/WorkIndex";
 import Contact from "./components/Contact";
 import ProjectModal from "./components/ProjectModal";
 import Footer from "./components/Footer";
@@ -71,6 +72,9 @@ export default function App() {
         <ChapterBreak seam="web" index={t.web.index} label={t.web.kicker} accent={STAGE_COLORS.web} />
         <ErrorBoundary>
           <WebStack />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <WorkIndex />
         </ErrorBoundary>
         <ChapterBreak seam="contact" index="04" label={t.contact.kicker} accent={STAGE_COLORS.contact} />
         <ErrorBoundary>

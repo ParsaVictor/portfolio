@@ -4,7 +4,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Reveal from "./Reveal";
 import { StageCopy } from "./VisionRail";
-import FeaturedBadge from "./FeaturedBadge";
+import FeaturedBadge, { NewBadge } from "./FeaturedBadge";
 import { useLang } from "../i18n/LangProvider";
 import { dataProjects, desc, type Project } from "../data/projects";
 import { STAGE_COLORS } from "../config";
@@ -56,6 +56,7 @@ export default function DataConsole() {
               lang={lang}
               open={t.project.open}
               featuredLabel={t.project.featured}
+              newLabel={t.project.isNew}
             />
           ))}
         </div>
@@ -72,12 +73,14 @@ function FocusRow({
   lang,
   open,
   featuredLabel,
+  newLabel,
 }: {
   project: Project;
   index: number;
   lang: "en" | "fa";
   open: string;
   featuredLabel: string;
+  newLabel: string;
 }) {
   const ref = useRef<HTMLAnchorElement>(null);
 
@@ -164,6 +167,7 @@ function FocusRow({
         {project.featured && (
           <FeaturedBadge label={featuredLabel} className="absolute top-2 start-2" />
         )}
+        {project.isNew && <NewBadge label={newLabel} className="absolute top-2 start-2" />}
       </div>
 
       <div className="min-w-0">

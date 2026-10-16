@@ -31,7 +31,13 @@ export default function Navbar() {
       if (spineRef.current) {
         spineRef.current.style.transform = "scaleX(" + Math.max(0, Math.min(1, s.progress)) + ")";
       }
-      setActiveStage(Math.max(0, Math.min(STAGE_COUNT - 1, Math.round(s.stage))));
+      const stage = Math.max(0, Math.min(STAGE_COUNT - 1, Math.round(s.stage)));
+      // The index sits at the tail of the web chapter (same swarm stage), so
+      // its link lights up once the index itself has reached the reading line.
+      const idx = document.getElementById("index");
+      const inIndex =
+        stage === 3 && !!idx && idx.getBoundingClientRect().top < window.innerHeight * 0.4;
+      setActiveStage(stage < 3 ? stage : stage === 3 ? (inIndex ? 4 : 3) : 5);
     });
   }, []);
 
@@ -52,6 +58,7 @@ export default function Navbar() {
     { id: "cv", short: t.nav.cv, label: t.rail.cv, index: t.cv.index, color: STAGE_COLORS.cv },
     { id: "data", short: t.nav.data, label: t.rail.data, index: t.data.index, color: STAGE_COLORS.data },
     { id: "web", short: t.nav.web, label: t.rail.web, index: t.web.index, color: STAGE_COLORS.web },
+    { id: "index", short: t.nav.index, label: t.rail.index, index: "∑", color: "#8fd67a" },
     { id: "contact", short: t.nav.contact, label: t.rail.contact, index: "04", color: STAGE_COLORS.contact },
   ];
   const gh = socials.find((s) => s.key === "github")!;

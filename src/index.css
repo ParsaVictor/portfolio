@@ -33,6 +33,10 @@
 html {
   background: var(--color-ink);
   -webkit-font-smoothing: antialiased;
+  /* copy-plate glows reach past the side gutters; on phones that widened the
+     layout viewport (and shifted the whole page sideways in RTL). clip, not
+     hidden: it makes no scroll container, so the sticky stages still pin. */
+  overflow-x: clip;
 }
 
 html[dir="rtl"] body {
@@ -44,6 +48,7 @@ body {
   background: var(--color-ink);
   color: var(--color-bone);
   overflow-x: hidden;
+  overflow-x: clip;
 }
 
 ::selection {

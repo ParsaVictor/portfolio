@@ -11,6 +11,7 @@ import { useScrub } from "../scroll/useScrub";
 import { useHandover } from "../scroll/useHandover";
 import { clamp } from "../lib/num";
 import { openProject, shouldOpenInPage } from "../state/projectModal";
+import FeaturedBadge, { NewBadge } from "./FeaturedBadge";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -71,7 +72,7 @@ export default function WebStack() {
                 zIndex: 10 + i,
               }}
             >
-              <BrowserCard project={p} index={i} lang={lang} view={t.project.open} solid />
+              <BrowserCard project={p} index={i} lang={lang} view={t.project.open} solid {...marks(p, t.project)} />
             </div>
           ))}
           {/* room for the last card to travel fully into the slot */}
@@ -83,7 +84,7 @@ export default function WebStack() {
       <div
         ref={wrapRef}
         className="relative hidden lg:block"
-        style={{ height: (N + 1) * 88 + "vh" }}
+        style={{ height: (N + 1) * 76 + "vh" }}
       >
         <div className="sticky top-0 flex h-screen items-center overflow-hidden">
           <div
@@ -115,7 +116,7 @@ export default function WebStack() {
                     className="absolute inset-x-0 top-1/2 -translate-y-1/2 will-change-transform"
                     style={{ transition: "opacity 180ms linear" }}
                   >
-                    <BrowserCard project={p} index={i} lang={lang} view={t.project.open} />
+                    <BrowserCard project={p} index={i} lang={lang} view={t.project.open} {...marks(p, t.project)} />
                   </div>
                 ))}
               </div>
@@ -127,11 +128,21 @@ export default function WebStack() {
   );
 }
 
-function slug(title: string) {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+function marks(p: Project, labels: { isNew: string; featured: string }) {
+  return {
+    isNew: p.isNew ? labels.isNew : undefined,
+    featured: p.featured ? labels.featured : undefined,
+  };
+}
+
+/** What the window's address bar reads: the repo, or the live site when the repo is private. */
+function address(p: Project) {
+  try {
+    const u = new URL(p.url);
+    return (u.host + u.pathname).replace(/\/$/, "");
+  } catch {
+    return p.url;
+  }
 }
 
 function BrowserCard({
@@ -140,12 +151,17 @@ function BrowserCard({
   lang,
   view,
   solid = false,
+  isNew,
+  featured,
 }: {
   project: Project;
   index: number;
   lang: "en" | "fa";
   view: string;
   solid?: boolean;
+  /** badge labels, passed only when the project carries that mark */
+  isNew?: string;
+  featured?: string;
 }) {
   const ref = useRef<HTMLAnchorElement>(null);
 
@@ -206,7 +222,7 @@ function BrowserCard({
         </div>
         <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md bg-bone/5 px-3 py-1 font-mono text-[10px] tracking-wider text-dim">
           <Lock size={9} style={{ color: ACCENT }} />
-          <span className="truncate">github.com/ParsaVictor/{slug(project.title)}</span>
+          <span className="truncate">{address(project)}</span>
         </div>
         <span
           aria-hidden
@@ -245,6 +261,12 @@ function BrowserCard({
         >
           {project.stat}
         </span>
+        {(isNew || featured) && (
+          <span className="absolute start-3 top-3 flex gap-1.5">
+            {isNew && <NewBadge label={isNew} />}
+            {featured && <FeaturedBadge label={featured} />}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">

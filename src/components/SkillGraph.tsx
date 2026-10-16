@@ -34,10 +34,13 @@ const EVIDENCE: Record<string, string[]> = {
   "Random Forest": ["pcb-classify"],
   "Explainable AI": ["pcb-classify"],
   NumPy: ["pointcloud", "pcb-classify"],
-  React: ["melkai", "site"],
-  TypeScript: ["b2b", "site"],
+  SQL: ["univecity", "homsayeh", "imam-reza-shift"],
+  React: ["homsayeh", "univecity", "melkai", "site"],
+  TypeScript: ["homsayeh", "univecity", "b2b", "neuromesh", "site"],
   "Three.js": ["site"],
-  "Next.js": ["melkai"],
+  "Next.js": ["homsayeh", "univecity", "melkai"],
+  Docker: ["univecity", "homsayeh"],
+  Git: ["neuromesh", "code-context-engine"],
   MLOps: ["ai-template"],
 };
 

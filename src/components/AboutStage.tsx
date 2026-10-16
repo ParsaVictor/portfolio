@@ -8,6 +8,9 @@ import { identity } from "../config";
 import { digits } from "../lib/num";
 import { useHandover } from "../scroll/useHandover";
 import { useQuietZone } from "../state/quietZone";
+import CountUp from "./bits/CountUp";
+
+const toFa = (text: string) => digits(text, "fa");
 
 const ACCENT = "#a894ff";
 
@@ -66,7 +69,16 @@ export default function AboutStage() {
               {t.about.stats.map((s) => (
                 <div key={s.label}>
                   <dt className="text-[clamp(1.5rem,4vw,2.5rem)] font-bold leading-none tabular-nums text-bone">
-                    {s.value}
+                    <CountUp
+                      key={lang}
+                      to={s.n}
+                      prefix={s.prefix}
+                      suffix={s.suffix}
+                      duration={1.8}
+                      easing="expo"
+                      separator=""
+                      localize={lang === "fa" ? toFa : undefined}
+                    />
                   </dt>
                   <dd className="mt-2 font-mono text-[10px] uppercase leading-5 tracking-[0.2em] text-dim">
                     {s.label}
