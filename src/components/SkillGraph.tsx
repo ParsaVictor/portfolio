@@ -23,7 +23,7 @@ const BRANCHES: Branch[] = [
  * with no entry is everyday toolkit and says so, rather than inventing a link.
  */
 const EVIDENCE: Record<string, string[]> = {
-  YOLO: ["ppe-sentinel", "pelakx", "fireguard", "pcb-detect"],
+  YOLO: ["ppe-sentinel", "pelakx", "fireguard", "pcb-detect", "pcb-solder-defects", "pcb-bare-defects"],
   OpenCV: ["pelakx", "pcb-classify"],
   ByteTrack: ["thief", "ppe-sentinel"],
   PyTorch: ["pcb-detect", "ai-template"],
