@@ -202,3 +202,62 @@ body {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ── the play button ───────────────────────────────────────────────────────
+   Two rings leave it in turn, in the project's own accent — a quiet "there is
+   a film behind this picture". They stop while the pointer is on it. */
+@keyframes mpk-play-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.75);
+    opacity: 0;
+  }
+}
+.mpk-play::before,
+.mpk-play::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 999px;
+  border: 1.5px solid var(--play, #fff);
+  pointer-events: none;
+  animation: mpk-play-ring 2.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+.mpk-play::after {
+  animation-delay: 1.3s;
+}
+.mpk-play:hover::before,
+.mpk-play:hover::after {
+  animation-play-state: paused;
+  opacity: 0;
+}
+
+/* the detail overlay's cover: one pass of light when it opens */
+@keyframes mpk-sweep {
+  0% {
+    transform: translateX(-130%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(260%) skewX(-18deg);
+  }
+}
+.mpk-sweep {
+  animation: mpk-sweep 1.15s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+}
+
+/* the reel's film perforations */
+.mpk-perf {
+  background-image: radial-gradient(circle, rgba(242, 236, 225, 0.22) 2.2px, transparent 2.6px);
+  background-size: 18px 100%;
+  background-position: 9px 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mpk-play::before,
+  .mpk-play::after {
+    display: none;
+  }
+}

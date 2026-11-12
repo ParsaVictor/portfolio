@@ -43,13 +43,19 @@ Cloudflare Workers/D1, Expo (React Native).
 The work falls into four kinds, and the site's index filters by them:
 
 1. Vision systems — camera in, decision out (PelakX, FireGuard, PPE
-   Sentinel, Thief detection, Visual Intelligence Engine, PCB detection).
+   Sentinel, Thief detection, Visual Intelligence Engine, PCB detection and
+   defect inspection, Tomato Ripeness, Student Face Gate).
 2. Research & algorithms — point-cloud curve reconstruction, explainable
    PCB classification.
 3. AI developer tooling — Code Context Engine, NeuroMesh (contributor),
    AI Project Template.
 4. Products & platforms — Homsayeh, UniVecity, Hospital Shift Intelligence,
-   Melk AI, B2B Marketplace.
+   ReachDesk, Melk AI, B2B Marketplace.
+
+Several vision projects carry a recorded demo of the real system on the
+site (a play button on the project's cover): Thief detection, Tomato
+Ripeness, PPE Sentinel, PelakX, FireGuard, PCB Component Classifier and
+Visual Intelligence Engine.
 
 ## Selected projects
 
@@ -86,9 +92,33 @@ The work falls into four kinds, and the site's index filters by them:
   intelligence across three YOLO generations (v8/11/26), zero training.
   https://github.com/ParsaVictor/fireguard
 
-- **PCB Component Detection** — YOLOv8 detection of electronic components
-  on populated PCBs: 50 classes, 675k annotations.
-  https://github.com/ParsaVictor/pcb-component-detection-yolov8
+- **Tomato Ripeness Detection & Counting** — YOLO26 + ByteTrack: every
+  tomato on a conveyor gets a persistent ID, is counted once and graded
+  unripe / half-ripe / ripe / rotten; 95–99% counting accuracy, CPU-only.
+  https://github.com/ParsaVictor/tomato-ripeness-detection
+
+- **Student Face Gate** — offline, CPU-only face gate for a university
+  entrance: YuNet detection, ArcFace signatures, liveness, exact search
+  across 20,000 students in 2.3 ms. Private repo.
+
+- **ReachDesk** — self-learning outreach and opportunity desk that runs
+  locally with no API keys and no LLM tokens: ranks people, posts and jobs,
+  drafts a personal message for each, learns from 1–5 star ratings.
+  https://github.com/ParsaVictor/mardani
+
+- **PCB Component Detection** — two-stage YOLO26 pipeline (locator +
+  13-class typer) on full-resolution tiled board photos, with an explainable
+  Random-Forest refiner: 458 boards, 108k annotated components, locator
+  mAP@50 0.81.
+  https://github.com/ParsaVictor/pcb-component-detection-yolo26
+
+- **PCB Solder Defect Inspection** — YOLO26m detector for 9 soldering and
+  assembly defects, mAP@50 0.904.
+  https://github.com/ParsaVictor/pcb-solder-defect-detection-yolo26
+
+- **Bare PCB Defect Detection** — YOLO26s detector for 7 copper and
+  drilling defects on bare boards, mAP@50 0.895 with tiled inference.
+  https://github.com/ParsaVictor/pcb-bare-board-defect-detection-yolo26
 
 - **PCB Component Classifier** — explainable classification of electronic
   components: Random Forest over 33 hand-engineered CV features, 93.3%

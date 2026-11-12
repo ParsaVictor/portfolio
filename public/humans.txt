@@ -7,7 +7,7 @@ LinkedIn: https://www.linkedin.com/in/parsa-karkooti/
 Email: 1.parsa.karkooti@gmail.com
 
 /* SITE */
-Last update: 2026/09/10
+Last update: 2026/11/12
 Standards: HTML5, CSS3, JSON-LD
 Components: React, Vite, Tailwind CSS, GSAP, three.js
 Software: VS Code, Claude Code

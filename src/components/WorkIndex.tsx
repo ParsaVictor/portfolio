@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ArrowUpRight, GitFork, Globe, Lock } from "lucide-react";
+import { ArrowUpRight, GitFork, Globe, Lock, Play } from "lucide-react";
 import gsap from "gsap";
 import CountUp from "./bits/CountUp";
 import FeaturedBadge, { NewBadge } from "./FeaturedBadge";
@@ -20,6 +20,7 @@ import { digits } from "../lib/num";
 import { useHandover } from "../scroll/useHandover";
 import { useQuietZone } from "../state/quietZone";
 import { openProject, shouldOpenInPage } from "../state/projectModal";
+import VideoMark from "./VideoMark";
 
 const ACCENT = "#8fd67a";
 
@@ -311,16 +312,17 @@ function KindStage({ kind, projects }: { kind: KindMeta; projects: Project[] }) 
                 className="h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]"
               />
             )}
+            <VideoMark key={focus.id} project={focus} size="lg" />
             {/* corner brackets — the frame a detector draws */}
             {["start-3 top-3 border-s border-t", "end-3 top-3 border-e border-t", "start-3 bottom-3 border-s border-b", "end-3 bottom-3 border-e border-b"].map((c) => (
               <span key={c} aria-hidden className={"absolute h-5 w-5 " + c} style={{ borderColor: kind.color }} />
             ))}
-            <div className="absolute start-5 top-5 flex gap-1.5">
+            <div className="absolute start-5 top-5 z-[8] flex gap-1.5">
               {focus.isNew && <NewBadge label={t.project.isNew} />}
               {focus.featured && <FeaturedBadge label={t.project.featured} />}
             </div>
             <span
-              className="absolute bottom-5 start-5 rounded-md px-2 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
+              className="absolute bottom-5 start-5 z-[8] rounded-md px-2 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
               style={{ background: "rgba(8,7,6,0.75)", color: focus.accent }}
             >
               {focus.stat}
@@ -385,6 +387,14 @@ function ProjectRow({
       <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-black lg:aspect-auto lg:h-11 lg:w-[72px] lg:rounded-lg">
         {project.image && (
           <img src={project.image} alt="" loading="lazy" className="h-full w-full object-cover" />
+        )}
+        {project.video && (
+          <span
+            aria-hidden
+            className="absolute bottom-1 end-1 grid h-4 w-4 place-items-center rounded-full bg-black/70 text-white ring-1 ring-white/40 lg:bottom-0.5 lg:end-0.5"
+          >
+            <Play size={8} fill="currentColor" className="translate-x-[0.5px]" />
+          </span>
         )}
         {project.isNew && (
           <span className="absolute start-2 top-2 lg:hidden">

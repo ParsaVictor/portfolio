@@ -11,6 +11,7 @@ import { useScrub } from "../scroll/useScrub";
 import { useHandover } from "../scroll/useHandover";
 import { clamp } from "../lib/num";
 import { openProject, shouldOpenInPage } from "../state/projectModal";
+import VideoMark from "./VideoMark";
 import { scrollToY } from "../scroll/useSmoothScroll";
 import { digits } from "../lib/num";
 
@@ -628,18 +629,19 @@ function VisionCard({
         )}
 
         <Brackets color={project.accent} />
+        <VideoMark project={project} size={focus ? "lg" : "md"} />
 
         {project.featured && (
-          <FeaturedBadge label={featuredLabel} className="absolute top-3 start-3" />
+          <FeaturedBadge label={featuredLabel} className="absolute top-3 start-3 z-[8]" />
         )}
 
         <span
-          className="absolute bottom-3 start-3 rounded-md px-2 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
+          className="absolute bottom-3 start-3 z-[8] rounded-md px-2 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
           style={{ background: "rgba(8,7,6,0.72)", color: project.accent }}
         >
           {project.stat}
         </span>
-        <span className="absolute bottom-3 end-3 flex items-center gap-1 rounded-md bg-[rgba(8,7,6,0.72)] px-2 py-1 font-mono text-[10px] tracking-widest text-bone/80 backdrop-blur-sm ltr">
+        <span className="absolute bottom-3 end-3 z-[8] flex items-center gap-1 rounded-md bg-[rgba(8,7,6,0.72)] px-2 py-1 font-mono text-[10px] tracking-widest text-bone/80 backdrop-blur-sm ltr">
           <Star size={9} fill="currentColor" style={{ color: project.accent }} />
           {digits(project.stars, lang)}
         </span>

@@ -14,6 +14,7 @@ import VisionRail from "./components/VisionRail";
 import DataConsole from "./components/DataConsole";
 import WebStack from "./components/WebStack";
 import WorkIndex from "./components/WorkIndex";
+import DemoReel from "./components/DemoReel";
 import Contact from "./components/Contact";
 import ProjectModal from "./components/ProjectModal";
 import Footer from "./components/Footer";
@@ -72,6 +73,9 @@ export default function App() {
         <ChapterBreak seam="web" index={t.web.index} label={t.web.kicker} accent={STAGE_COLORS.web} />
         <ErrorBoundary>
           <WebStack />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <DemoReel />
         </ErrorBoundary>
         <ErrorBoundary>
           <WorkIndex />
