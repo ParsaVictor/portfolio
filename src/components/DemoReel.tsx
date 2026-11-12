@@ -66,10 +66,8 @@ export default function DemoReel() {
         <Reveal variant="up" duration={900} delay={120}>
           <div className="mt-9 overflow-hidden rounded-2xl border border-bone/10 bg-[rgba(12,10,9,0.86)]">
             <div aria-hidden className="mpk-perf h-4 border-b border-bone/8" />
-            <div
-              data-lenis-prevent-touch
-              className="mpk-scroll flex snap-x snap-mandatory gap-3 overflow-x-auto p-3 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-4"
-            >
+            {/* a grid at every size — nothing here hides off to the side */}
+            <div className="grid grid-cols-2 gap-2 p-2 sm:gap-3 sm:p-3 lg:grid-cols-4">
               {videoProjects.map((p, i) => (
                 <Frame key={p.id} project={p} index={i} />
               ))}
@@ -96,13 +94,18 @@ function Frame({ project, index }: { project: Project; index: number }) {
         openProject(project, { autoplay: true });
       }}
       className={
-        "group relative block w-[78vw] max-w-[340px] shrink-0 snap-center overflow-hidden rounded-xl border border-bone/10 bg-black transition-[border-color,transform] duration-300 hover:-translate-y-1 hover:border-bone/35 sm:w-auto sm:max-w-none" +
+        "group relative block min-w-0 overflow-hidden rounded-xl border border-bone/10 bg-black transition-[border-color,transform] duration-300 hover:-translate-y-1 hover:border-bone/35" +
         // an odd count would leave a hole in the grid — the lead frame takes two
-        (index === 0 && videoProjects.length % 2 === 1 ? " sm:col-span-2" : "")
+        (index === 0 && videoProjects.length % 2 === 1 ? " col-span-2" : "")
       }
       style={{ boxShadow: "0 24px 60px -34px " + project.accent }}
     >
-      <div className="relative aspect-[16/10] w-full overflow-hidden sm:aspect-auto sm:h-[200px]">
+      <div
+        className={
+          "relative w-full overflow-hidden sm:aspect-auto sm:h-[200px] " +
+          (index === 0 && videoProjects.length % 2 === 1 ? "aspect-[16/9]" : "aspect-[4/3]")
+        }
+      >
         {project.image && (
           <img
             src={project.image}
@@ -111,15 +114,15 @@ function Frame({ project, index }: { project: Project; index: number }) {
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.05]"
           />
         )}
-        <VideoMark project={project} />
-        <span className="pointer-events-none absolute inset-x-0 bottom-0 z-[8] bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3.5 pb-3 pt-10">
+        <VideoMark project={project} size={index === 0 ? "md" : "sm"} />
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 z-[8] bg-gradient-to-t from-black/90 via-black/55 to-transparent px-2.5 pb-2 pt-8 sm:px-3.5 sm:pb-3 sm:pt-10">
           <span className="flex items-baseline gap-2">
             <span className="font-mono text-[10px] tabular-nums tracking-[0.2em] ltr" style={{ color: project.accent }}>
               {digits(String(index + 1).padStart(2, "0"), lang)}
             </span>
-            <span className="truncate text-[14px] font-bold text-bone ltr">{project.title}</span>
+            <span className="truncate text-[12px] font-bold text-bone ltr sm:text-[14px]">{project.title}</span>
           </span>
-          <span className="mt-0.5 block truncate text-[11.5px] text-bone/60">{domain(project, lang)}</span>
+          <span className="mt-0.5 hidden truncate text-[11.5px] text-bone/60 sm:block">{domain(project, lang)}</span>
         </span>
       </div>
     </a>
