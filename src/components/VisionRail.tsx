@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUpRight, ChevronLeft, ChevronRight, MoveHorizontal, Star } from "lucide-react";
+import { ArrowUpRight, ChevronsDown, Star } from "lucide-react";
 import Reveal from "./Reveal";
 import Scramble from "./Scramble";
 import SideLabel from "./SideLabel";
@@ -17,6 +17,8 @@ import { digits } from "../lib/num";
 
 const ACCENT = STAGE_COLORS.cv;
 const N = cvProjects.length;
+/** share of the phone stage's travel spent holding still at each end */
+const M_DWELL = 0.06;
 const ARC_MASK = "linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)";
 
 /**
@@ -103,193 +105,154 @@ export default function VisionRail() {
     measure();
     return () => ro.disconnect();
   }, [onScrub]);
-  const railRef = useRef<HTMLDivElement>(null);
-
-  // Which card sits in the rail's focus slot on touch screens. Drives the
-  // counter, the dots and the arrows — the affordances that tell a first-time
-  // visitor there is more than one project here.
+  // ── phones: the same scroll grammar as the desktop stage ─────────────
+  // The section pins, and scrolling the page down walks the cards across
+  // from right to left, one at a time, until the last one has had its turn —
+  // only then does the page move on. No sideways swipe to discover.
+  const mCardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const mTrackRef = useRef<HTMLDivElement>(null);
+  const mBarRef = useRef<HTMLDivElement>(null);
+  const mFit = useRef(1);
+  const mLastP = useRef(0);
   const [mActive, setMActive] = useState(0);
 
-  const railTo = useCallback((i: number) => {
-    const rail = railRef.current;
-    if (!rail) return;
-    const child = rail.children[clamp(i, 0, N - 1)] as HTMLElement | undefined;
-    if (!child) return;
-    rail.scrollTo({
-      left: child.offsetLeft + child.offsetWidth / 2 - rail.clientWidth / 2,
-      behavior: "smooth",
-    });
+  const onMScrub = useCallback((p: number) => {
+    mLastP.current = p;
+    const k = mFit.current;
+    // a short dwell at both ends, so the first card is read before it moves
+    // and the last one settles before the page lets go
+    const q = clamp((p - M_DWELL) / (1 - 2 * M_DWELL), 0, 1);
+    const pos = q * (N - 1);
+    for (let i = 0; i < N; i++) {
+      const el = mCardRefs.current[i];
+      if (!el) continue;
+      const d = i - pos;
+      const ad = Math.abs(d);
+      el.style.transform =
+        "translate3d(" + d * 94 + "%, " + ad * 3 + "%, " + -ad * 150 + "px) " +
+        "rotateY(" + -d * 20 + "deg) scale(" + k * (1 - Math.min(ad, 2) * 0.1) + ")";
+      el.style.opacity = String(clamp(1 - ad * 0.6, 0, 1));
+      el.style.zIndex = String(100 - Math.round(ad * 10));
+      el.style.pointerEvents = ad < 0.5 ? "auto" : "none";
+      // the card in the slot gets the look hover gives it on desktop
+      const focus = Math.max(0, 1 - ad);
+      const media = el.querySelector<HTMLElement>("[data-media] img:not([aria-hidden])");
+      if (media) media.style.transform = "scale(" + (1 + focus * 0.04) + ")";
+    }
+    if (mBarRef.current) mBarRef.current.style.transform = "scaleX(" + clamp(q, 0.02, 1) + ")";
+    setMActive(Math.round(pos));
   }, []);
 
-  // Touch screens keep native scrolling — momentum and snapping are better than
-  // anything I would write — but the cards still ride the same arc, driven off
-  // the rail's own scroll position rather than the page's.
+  const mWrapRef = useScrub(onMScrub);
+
   useEffect(() => {
-    const rail = railRef.current;
-    if (!rail) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    const paint = () => {
-      const mid = rail.scrollLeft + rail.clientWidth / 2;
-      let best = 0;
-      let bestD = Infinity;
-      Array.from(rail.children).forEach((c, i) => {
-        const el = c as HTMLElement;
-        const dd = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid);
-        if (dd < bestD) {
-          bestD = dd;
-          best = i;
-        }
-      });
-      setMActive(best);
-      if (reduced) return;
-      for (const child of Array.from(rail.children) as HTMLElement[]) {
-        const c = child.offsetLeft + child.offsetWidth / 2;
-        const d = (c - mid) / Math.max(1, child.offsetWidth);
-        const ad = Math.min(Math.abs(d), 2);
-        child.style.transform =
-          "rotateY(" + -d * 15 + "deg) translateZ(" + -ad * 80 + "px) scale(" + (1 - ad * 0.05) + ")";
-        child.style.opacity = String(Math.max(0.25, 1 - ad * 0.42));
-
-        // the card nearest center gets the same "focused" look hover gives
-        // it on desktop — a zoomed still and bright brackets — since touch
-        // never fires :hover to trigger that on its own.
-        const focus = Math.max(0, 1 - ad);
-        const media = child.querySelector<HTMLElement>("[data-media]");
-        if (media) media.style.transform = "scale(" + (1 + focus * 0.05) + ")";
-        for (const b of child.querySelectorAll<HTMLElement>("[data-bracket]")) {
-          b.style.opacity = String(0.7 + focus * 0.3);
-        }
-      }
+    const track = mTrackRef.current;
+    if (!track) return;
+    const measure = () => {
+      const room = track.clientHeight;
+      let tallest = 0;
+      for (const el of mCardRefs.current) if (el) tallest = Math.max(tallest, el.offsetHeight);
+      if (!room || !tallest) return; // phone stage hidden (desktop)
+      const k = Math.min(1, (room - 8) / tallest);
+      if (Math.abs(k - mFit.current) < 0.002) return;
+      mFit.current = k;
+      onMScrub(mLastP.current);
     };
+    const ro = new ResizeObserver(measure);
+    ro.observe(track);
+    for (const el of mCardRefs.current) if (el) ro.observe(el);
+    measure();
+    return () => ro.disconnect();
+  }, [onMScrub]);
 
-    paint();
-    rail.addEventListener("scroll", paint, { passive: true });
-    window.addEventListener("resize", paint);
-    const settle = window.setTimeout(paint, 600);
-
-    // The first time the rail scrolls into view it nudges itself sideways and
-    // settles back: a wordless "this moves" that a peeking edge alone never
-    // managed to say. Once, and only if nobody has already touched it.
-    let touched = false;
-    let nudge = 0;
-    let undo = 0;
-    const onTouch = () => {
-      touched = true;
-    };
-    rail.addEventListener("touchstart", onTouch, { passive: true, once: true });
-    rail.addEventListener("pointerdown", onTouch, { passive: true, once: true });
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return;
-        io.disconnect();
-        if (reduced || touched || rail.scrollLeft > 4) return;
-        nudge = window.setTimeout(() => {
-          if (touched || rail.scrollLeft > 4) return;
-          rail.scrollTo({ left: rail.clientWidth * 0.22, behavior: "smooth" });
-          undo = window.setTimeout(() => {
-            if (!touched) rail.scrollTo({ left: 0, behavior: "smooth" });
-          }, 560);
-        }, 700);
-      },
-      { threshold: 0.55 }
-    );
-    io.observe(rail);
-
-    return () => {
-      rail.removeEventListener("scroll", paint);
-      rail.removeEventListener("touchstart", onTouch);
-      rail.removeEventListener("pointerdown", onTouch);
-      window.removeEventListener("resize", paint);
-      window.clearTimeout(settle);
-      window.clearTimeout(nudge);
-      window.clearTimeout(undo);
-      io.disconnect();
-    };
-  }, []);
+  const mJumpTo = useCallback(
+    (i: number) => {
+      const wrap = mWrapRef.current;
+      if (!wrap) return;
+      const top = wrap.getBoundingClientRect().top + window.scrollY;
+      const travel = wrap.offsetHeight - window.innerHeight;
+      const q = clamp(i, 0, N - 1) / (N - 1);
+      scrollToY(top + (M_DWELL + q * (1 - 2 * M_DWELL)) * travel, 0.9);
+    },
+    [mWrapRef]
+  );
   const current = cvProjects[clamp(active, 0, N - 1)];
 
   return (
     <section id="cv" data-scene="1" className="relative">
-      {/* ── small screens: a native horizontal snap rail ──────────────── */}
+      {/* ── small screens: a pinned stage, scrubbed by the page scroll ── */}
       <div className="lg:hidden">
-        <div className="px-6 pb-6 pt-20">
+        <div className="px-6 pb-2 pt-20">
           <StageCopy accent={ACCENT} meta={t.cv} />
         </div>
 
-        {/* the read-out: which detection is in the slot, out of how many */}
-        <div className="mx-6 mb-5 flex items-end justify-between gap-4 border-t border-bone/10 pt-4">
-          <div className="min-w-0">
-            <div className="flex items-baseline gap-2 font-mono text-[11px] tracking-[0.24em] text-dim ltr">
-              <span className="text-2xl font-bold tabular-nums" style={{ color: ACCENT }}>
-                {digits(String(mActive + 1).padStart(2, "0"), lang)}
-              </span>
-              <span>/ {digits(String(N).padStart(2, "0"), lang)}</span>
+        <div ref={mWrapRef} className="relative" style={{ height: "calc(" + N * 52 + "svh + 100svh)" }}>
+          <div className="sticky top-0 flex h-[100svh] flex-col overflow-hidden pb-5 pt-[4.6rem]">
+            {/* the read-out: which detection is in the slot, out of how many */}
+            <div className="mx-6 shrink-0 border-t border-bone/10 pt-3">
+              <div className="flex items-end justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-2 font-mono text-[11px] tracking-[0.24em] text-dim ltr">
+                    <span className="text-2xl font-bold tabular-nums" style={{ color: ACCENT }}>
+                      {digits(String(mActive + 1).padStart(2, "0"), lang)}
+                    </span>
+                    <span>/ {digits(String(N).padStart(2, "0"), lang)}</span>
+                  </div>
+                  <div className="mt-1 truncate font-mono text-[11px] tracking-wider text-bone/80 ltr">
+                    {cvProjects[clamp(mActive, 0, N - 1)].title}
+                  </div>
+                </div>
+                <p className="flex shrink-0 items-center gap-1.5 pb-0.5 font-mono text-[9px] uppercase tracking-[0.22em] text-dim">
+                  <ChevronsDown size={12} className="animate-[mpk-bob_1.8s_ease-in-out_infinite]" />
+                  {t.cv.swipeHint}
+                </p>
+              </div>
+              <div className="mt-3 h-px w-full overflow-hidden bg-bone/10">
+                <div
+                  ref={mBarRef}
+                  className="h-full origin-left rtl:origin-right"
+                  style={{ background: ACCENT, transform: "scaleX(0.02)" }}
+                />
+              </div>
             </div>
-            <div className="mt-1 truncate font-mono text-[11px] tracking-wider text-bone/80 ltr">
-              {cvProjects[mActive].title}
-            </div>
-          </div>
-          <div dir="ltr" className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={() => railTo(mActive - 1)}
-              disabled={mActive === 0}
-              aria-label={t.cv.prev}
-              className="grid h-10 w-10 place-items-center rounded-full border border-bone/15 text-bone transition-opacity disabled:opacity-30"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => railTo(mActive + 1)}
-              disabled={mActive === N - 1}
-              aria-label={t.cv.next}
-              className="grid h-10 w-10 place-items-center rounded-full border text-ink transition-opacity disabled:opacity-30"
-              style={{ background: ACCENT, borderColor: ACCENT }}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
 
-        <div
-          ref={railRef}
-          dir="ltr"
-          className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-[11vw] pb-6 [-ms-overflow-style:none] [perspective:1100px] [scrollbar-width:none] sm:px-[21vw]"
-        >
-          {cvProjects.map((p, i) => (
-            <div
-              key={p.id}
-              className="w-[78vw] shrink-0 snap-center will-change-transform sm:w-[58vw]"
-              style={{ transition: "opacity 220ms linear" }}
-            >
-              <VisionCard project={p} index={i} lang={lang} view={t.project.open} featuredLabel={t.project.featured} />
+            {/* the track: cards enter from the right and leave to the left */}
+            <div ref={mTrackRef} dir="ltr" className="relative mt-4 min-h-0 flex-1 [perspective:1100px]">
+              {cvProjects.map((p, i) => (
+                <div
+                  key={p.id}
+                  ref={(el) => {
+                    mCardRefs.current[i] = el;
+                  }}
+                  className="absolute left-1/2 top-1/2 w-[82vw] max-w-[460px] -translate-x-1/2 -translate-y-1/2 will-change-transform"
+                >
+                  <VisionCard project={p} index={i} lang={lang} view={t.project.open} featuredLabel={t.project.featured} />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* dots + the hint, together: the dots say "there are N", the hint says "swipe" */}
-        <div className="flex flex-col items-center gap-3 px-6 pb-16 pt-2">
-          <div dir="ltr" className="flex items-center gap-2">
-            {cvProjects.map((p, i) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => railTo(i)}
-                aria-label={p.title}
-                className="h-1.5 rounded-full transition-all duration-300"
-                style={{
-                  width: i === mActive ? 22 : 6,
-                  background: i === mActive ? ACCENT : "rgba(242,236,225,0.22)",
-                }}
-              />
-            ))}
+            {/* every project, one tap away — the scroll still does the moving */}
+            <div dir="ltr" className="mt-3 flex shrink-0 items-center justify-center gap-1.5 px-6">
+              {cvProjects.map((p, i) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => mJumpTo(i)}
+                  aria-label={p.title}
+                  aria-current={i === mActive}
+                  className="flex h-6 items-center"
+                >
+                  <span
+                    className="block h-1.5 rounded-full transition-all duration-300"
+                    style={{
+                      width: i === mActive ? 22 : 6,
+                      background: i === mActive ? p.accent : "rgba(242,236,225,0.22)",
+                    }}
+                  />
+                </button>
+              ))}
+            </div>
           </div>
-          <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.26em] text-dim">
-            <MoveHorizontal size={12} className="animate-[mpk-nudge_1.8s_ease-in-out_infinite]" />
-            {t.cv.swipeHint}
-          </p>
         </div>
       </div>
 

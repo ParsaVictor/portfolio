@@ -270,11 +270,12 @@ function KindStage({ kind, projects }: { kind: KindMeta; projects: Project[] }) 
       <div ref={listRef} className="mt-5 flex min-h-0 flex-col lg:mt-0">
         <p className="text-[13px] leading-6 text-bone/65 lg:text-[14px]">{fa ? kind.noteFa : kind.noteEn}</p>
 
-        {/* desktop: a list of rows; phones: a swipeable strip of cards */}
+        {/* a list of rows at every size: phones scroll past it with the page,
+            the desktop frame gives it its own scroller */}
         <div
           data-lenis-prevent
           data-cursor-plain
-          className="mpk-scroll -mx-5 mt-4 flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 pb-2 lg:scroll-px-0 lg:mx-0 lg:min-h-0 lg:flex-1 lg:snap-none lg:flex-col lg:gap-1.5 lg:overflow-y-auto lg:overflow-x-visible lg:px-0 lg:pb-0 lg:pe-1"
+          className="mpk-scroll mt-4 flex flex-col gap-2 lg:min-h-0 lg:flex-1 lg:gap-1.5 lg:overflow-y-auto lg:pe-1"
         >
           {projects.map((p, i) => (
             <ProjectRow
@@ -376,15 +377,14 @@ function ProjectRow({
         openProject(project);
       }}
       className={
-        "group relative flex w-[68vw] max-w-[280px] shrink-0 snap-start flex-col overflow-hidden rounded-xl border transition-colors duration-200 sm:w-[46vw] " +
-        "lg:w-auto lg:max-w-none lg:flex-row lg:items-center lg:gap-3 lg:p-2 lg:pe-3"
+        "group relative flex flex-row items-center gap-3 overflow-hidden rounded-xl border p-2 pe-3 transition-colors duration-200"
       }
       style={{
         borderColor: on ? color + "80" : "rgba(242,236,225,0.08)",
         background: on ? "rgba(242,236,225,0.06)" : "rgba(19,16,14,0.7)",
       }}
     >
-      <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-black lg:aspect-auto lg:h-11 lg:w-[72px] lg:rounded-lg">
+      <div className="relative h-[60px] w-[96px] shrink-0 overflow-hidden rounded-lg bg-black lg:h-11 lg:w-[72px]">
         {project.image && (
           <img src={project.image} alt="" loading="lazy" className="h-full w-full object-cover" />
         )}
@@ -396,23 +396,18 @@ function ProjectRow({
             <Play size={8} fill="currentColor" className="translate-x-[0.5px]" />
           </span>
         )}
-        {project.isNew && (
-          <span className="absolute start-2 top-2 lg:hidden">
-            <NewBadge label={t.project.isNew} />
-          </span>
-        )}
       </div>
 
-      <div className="min-w-0 flex-1 p-3 lg:p-0">
+      <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="hidden font-mono text-[10px] tabular-nums text-dim lg:inline">
+          <span className="font-mono text-[10px] tabular-nums text-dim">
             {digits(String(index + 1).padStart(2, "0"), lang)}
           </span>
           <span className="truncate text-[14px] font-semibold text-bone ltr">{project.title}</span>
           {project.isNew && (
             <span
               aria-label={t.project.isNew}
-              className="hidden h-1.5 w-1.5 shrink-0 rounded-full lg:inline-block"
+              className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
               style={{ background: "#8fd67a", boxShadow: "0 0 8px #8fd67a" }}
             />
           )}
@@ -424,15 +419,12 @@ function ProjectRow({
           </span>
           {project.website && <Globe size={11} className="shrink-0" style={{ color }} />}
         </p>
-        <span className="mt-2 inline-block font-mono text-[10px] tracking-widest ltr lg:hidden" style={{ color: project.accent }}>
-          {project.stat}
-        </span>
       </div>
 
       <ArrowUpRight
         size={14}
-        className="hidden shrink-0 transition-opacity duration-200 lg:block"
-        style={{ color, opacity: on ? 1 : 0 }}
+        className="shrink-0 transition-opacity duration-200"
+        style={{ color, opacity: on ? 1 : 0.35 }}
       />
     </a>
   );
