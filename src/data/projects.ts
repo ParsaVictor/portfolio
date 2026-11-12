@@ -30,6 +30,14 @@ export type Project = {
   access: "open" | "private" | "contrib";
   /** Shipped since the last round of updates — gets a small NEW mark. */
   isNew?: boolean;
+  /**
+   * A recorded demo of the real system, taken from the project's repository.
+   * The cover image stays the face of the project everywhere; this only adds a
+   * play button on top of it, and the clip plays inside the detail overlay.
+   */
+  video?: string;
+  /** Length of that demo in seconds — shown on the play button. */
+  videoSec?: number;
 };
 
 export type Kind = "vision" | "research" | "tooling" | "product";
@@ -90,6 +98,8 @@ export type Group = "cv" | "data" | "web";
 const cvList: Project[] = [
   {
     id: "thief",
+    video: "/videos/thief.mp4",
+    videoSec: 17,
     created: "2026-08-25T12:59:45Z",
     kind: "vision",
     domainEn: "Retail security",
@@ -110,6 +120,8 @@ const cvList: Project[] = [
   },
   {
     id: "visual-intelligence-engine",
+    video: "/videos/visual-intelligence-engine.mp4",
+    videoSec: 7,
     created: "2026-08-16T21:28:04Z",
     kind: "vision",
     domainEn: "Media archives",
@@ -129,6 +141,8 @@ const cvList: Project[] = [
   },
   {
     id: "ppe-sentinel",
+    video: "/videos/ppe-sentinel.mp4",
+    videoSec: 10,
     created: "2026-09-24T20:09:49Z",
     kind: "vision",
     domainEn: "Construction safety",
@@ -147,7 +161,51 @@ const cvList: Project[] = [
     accent: "#ffb454",
   },
   {
+    id: "tomato-ripeness",
+    video: "/videos/tomato-ripeness.mp4",
+    videoSec: 25,
+    created: "2026-10-27T16:08:03Z",
+    kind: "vision",
+    domainEn: "Food sorting lines",
+    domainFa: "خطِ سورتینگِ محصول",
+    access: "open",
+    isNew: true,
+    title: "Tomato Ripeness Detection & Counting",
+    descEn:
+      "Detects every tomato on a conveyor, gives it a persistent ID, counts it once as it crosses the line and grades it unripe / half-ripe / ripe / rotten. YOLO26s finds the fruit, a small classifier grades only the three best views of each track (70–88% less compute), and a second-opinion head cut false \"rotten\" calls on the belt from 32 to 1. 95–99% counting accuracy; runs on CPU.",
+    descFa:
+      "هر گوجه را روی نوار نقاله پیدا می‌کند، شناسه‌ی ثابت می‌دهد، هنگامِ عبور از خط فقط یک‌بار می‌شمارد و درجه‌بندی می‌کند: نارس / نیمه‌رسیده / رسیده / خراب. YOLO26s میوه را پیدا می‌کند، یک طبقه‌بندِ کوچک فقط سه نمای برترِ هر ردیابی را می‌سنجد (۷۰ تا ۸۸٪ محاسبه‌ی کمتر) و یک بازبینِ دوم، تشخیصِ اشتباهِ «خراب» روی نوار را از ۳۲ به ۱ رساند. دقتِ شمارش ۹۵ تا ۹۹٪؛ روی CPU اجرا می‌شود.",
+    tags: ["YOLO26", "ByteTrack", "Counting", "Hugging Face"],
+    url: "https://github.com/ParsaVictor/tomato-ripeness-detection",
+    image: "/images/project-tomato-ripeness.jpg",
+    stars: 0,
+    stat: "95–99% count acc",
+    accent: "#ff6a5e",
+  },
+  {
+    id: "student-face-gate",
+    created: "2026-11-07T13:36:52Z",
+    kind: "vision",
+    domainEn: "Campus access control",
+    domainFa: "کنترلِ ورودیِ دانشگاه",
+    access: "private",
+    isNew: true,
+    title: "Student Face Gate",
+    descEn:
+      "A university entrance that needs no GPU and no internet: a student stands in front of the camera and the screen turns green with their name; anyone else turns it red and the guard gets a snapshot. YuNet detection, ArcFace signatures, liveness against photos and screens, and an exact search across 20,000 students in 2.3 ms. Only frontal, good-quality frames are ever signed — 93.7% acceptance with zero false matches in the benchmark, on a Core i5 laptop with 4 GB of RAM.",
+    descFa:
+      "ورودیِ دانشگاه، بدونِ GPU و بدونِ اینترنت: دانشجو جلوی دوربین می‌ایستد و صفحه با نام و مشخصاتش سبز می‌شود؛ هر کسِ دیگری قرمز می‌شود و نگهبانی همان لحظه عکسش را می‌گیرد. تشخیص با YuNet، امضای چهره با ArcFace، تشخیصِ زنده‌بودن در برابرِ عکس و صفحه‌نمایش، و جست‌وجوی دقیق بینِ ۲۰٬۰۰۰ دانشجو در ۲٫۳ میلی‌ثانیه. فقط فریم‌های روبه‌رو و باکیفیت امضا می‌شوند — ۹۳٫۷٪ پذیرش بدونِ حتی یک تطبیقِ اشتباه در آزمون، روی لپ‌تاپِ Core i5 با ۴ گیگ رم.",
+    tags: ["ArcFace", "YuNet", "Liveness", "CPU-only"],
+    url: "https://github.com/ParsaVictor",
+    image: "/images/project-student-face-gate.jpg",
+    stars: 0,
+    stat: "20k faces · 2.3 ms",
+    accent: "#4ff0a0",
+  },
+  {
     id: "pelakx",
+    video: "/videos/pelakx.mp4",
+    videoSec: 25,
     created: "2026-09-04T23:28:13Z",
     kind: "vision",
     domainEn: "Mobility & traffic",
@@ -167,6 +225,8 @@ const cvList: Project[] = [
   },
   {
     id: "fireguard",
+    video: "/videos/fireguard.mp4",
+    videoSec: 82,
     created: "2026-08-29T22:29:11Z",
     kind: "vision",
     domainEn: "Fire safety",
@@ -193,14 +253,14 @@ const cvList: Project[] = [
     access: "open",
     title: "PCB Component Detection",
     descEn:
-      "YOLOv8 detection of electronic components on populated PCBs — 50 classes, 675k annotations, with dataset tooling and a full diagnosis of what limits the baseline.",
+      "Finds and types every component on a populated board — a two-stage YOLO26 pipeline (locator → 13-class typer) on full-resolution, tiled photos, plus an explainable Random-Forest refiner for uncertain boxes. 458 boards, 108k annotated components, split by board; locator mAP@50 0.81. The key finding: the YOLOv8 baseline had plateaued because of a 640 px export, not the model.",
     descFa:
-      "تشخیص قطعات الکترونیکی روی بردهای مونتاژشده با YOLOv8 — ۵۰ کلاس، ۶۷۵ هزار annotation، به‌همراه ابزارِ دیتاست و تحلیلِ کاملِ محدودیت‌های baseline.",
-    tags: ["YOLOv8", "PyTorch", "Dataset Tooling"],
-    url: "https://github.com/ParsaVictor/pcb-component-detection-yolov8",
+      "هر قطعه را روی بردِ مونتاژشده پیدا و نوعش را مشخص می‌کند — خط‌لوله‌ی دومرحله‌ایِ YOLO26 (مکان‌یاب ← تشخیصِ نوع با ۱۳ کلاس) روی عکس‌های کاشی‌کاری‌شده در وضوحِ کامل، به‌همراه پالایشگرِ تفسیرپذیرِ Random Forest برای جعبه‌های نامطمئن. ۴۵۸ برد، ۱۰۸ هزار قطعه‌ی برچسب‌خورده، تفکیک بر اساسِ برد؛ mAP@50 مکان‌یاب ۰٫۸۱. یافته‌ی اصلی: سقفِ نسخه‌ی YOLOv8 از خروجیِ ۶۴۰ پیکسلی بود، نه از مدل.",
+    tags: ["YOLO26", "Tiled Inference", "Random Forest", "Dataset Tooling"],
+    url: "https://github.com/ParsaVictor/pcb-component-detection-yolo26",
     image: "/images/project-pcb.jpg",
     stars: 3,
-    stat: "50 classes",
+    stat: "108k boxes · mAP50 0.81",
     accent: "#a894ff",
   },
   {
@@ -209,7 +269,7 @@ const cvList: Project[] = [
     kind: "vision",
     domainEn: "Electronics manufacturing",
     domainFa: "تولیدِ الکترونیک",
-    access: "private",
+    access: "open",
     isNew: true,
     title: "PCB Solder Defect Inspection",
     descEn:
@@ -217,7 +277,7 @@ const cvList: Project[] = [
     descFa:
       "بازرسیِ نوریِ خودکار (AOI) برای بردهای مونتاژشده — آشکارسازِ YOLO26m برای ۹ عیبِ لحیم‌کاری و مونتاژ: پلِ لحیم، لحیمِ کم یا زیاد، حفره، قطعه‌ی جاافتاده یا جابه‌جاشده، سوختگی، آسیبِ فیزیکی و اکسیداسیون. ۱۵۵۷ عکسِ واقعیِ بدونِ تکرار از شش منبع، تفکیک‌شده بر اساسِ بردِ فیزیکی. نسخه‌ی اول واگرا شد؛ ردیابیِ آن تا یک باگِ warm-up در AdamW و افزودنِ محافظِ بازگشت، mAP@50-95 را از ۰٫۱۸۲ به ۰٫۶۴۸ رساند (۳٫۶ برابر)، mAP@50 برابر ۰٫۹۰۴.",
     tags: ["YOLO26", "AOI", "Training Diagnostics", "Colab T4"],
-    url: "https://github.com/ParsaVictor",
+    url: "https://github.com/ParsaVictor/pcb-solder-defect-detection-yolo26",
     image: "/images/project-pcb-solder-defects.jpg",
     stars: 0,
     stat: "mAP50 0.904",
@@ -229,7 +289,7 @@ const cvList: Project[] = [
     kind: "vision",
     domainEn: "Electronics manufacturing",
     domainFa: "تولیدِ الکترونیک",
-    access: "private",
+    access: "open",
     isNew: true,
     title: "Bare PCB Defect Detection",
     descEn:
@@ -237,7 +297,7 @@ const cvList: Project[] = [
     descFa:
       "بازرسیِ بردهای خام و مونتاژنشده — آشکارسازِ YOLO26s برای ۷ عیبِ کلاسیکِ مس و سوراخ‌کاری: سوراخِ جاافتاده، گازِ موشی، قطعیِ مسیر، اتصالِ کوتاه، زائده، مسِ اضافه و سوراخِ ریز. ساخته‌شده روی ادغامِ پاک‌سازی‌شده‌ی PKU-Market-PCB، DeepPCB و عکس‌های وب (حذفِ ۴۲۹۵ نسخه‌ی کاملاً یکسان و ۶۱۷ نسخه‌ی آینه‌ای)، تفکیک‌شده بر اساسِ بردِ فیزیکی تا هر بردِ آزمون طرحی باشد که مدل هرگز ندیده. mAP@50 برابر ۰٫۸۹۵ با استنتاجِ کاشی‌کاری‌شده در وضوحِ کامل.",
     tags: ["YOLO26", "AOI", "Dataset Cleaning", "Tiled Inference"],
-    url: "https://github.com/ParsaVictor",
+    url: "https://github.com/ParsaVictor/pcb-bare-board-defect-detection-yolo26",
     image: "/images/project-pcb-bare-defects.jpg",
     stars: 0,
     stat: "mAP50 0.895",
@@ -245,6 +305,8 @@ const cvList: Project[] = [
   },
   {
     id: "pcb-classify",
+    video: "/videos/pcb-classify.mp4",
+    videoSec: 11,
     created: "2026-08-23T18:30:13Z",
     kind: "research",
     domainEn: "Electronics manufacturing",
@@ -412,6 +474,26 @@ const webList: Project[] = [
     accent: "#4fe3c1",
   },
   {
+    id: "reachdesk",
+    created: "2026-11-01T09:00:00Z",
+    kind: "product",
+    domainEn: "Outreach & careers",
+    domainFa: "ارتباط‌گیری و فرصتِ شغلی",
+    access: "open",
+    isNew: true,
+    title: "ReachDesk — Self-learning Outreach Desk",
+    descEn:
+      "Ranks people, posts and jobs by what you actually want, writes a personal message for each one and sends email where you have grounds to. You rate 1–5 stars and say why; a small local model re-ranks everything and the reason assigns the blame. Runs on your own machine with no API keys and no LLM tokens, with opt-outs, daily caps and a 90-day cooldown re-checked at send time — and no LinkedIn automation, on purpose.",
+    descFa:
+      "آدم‌ها، پست‌ها و فرصت‌های شغلی را بر اساسِ چیزی که واقعاً می‌خواهی رتبه‌بندی می‌کند، برای هرکدام پیامِ شخصی می‌نویسد و هرجا مجوز داری ایمیل می‌فرستد. تو ۱ تا ۵ ستاره می‌دهی و دلیلش را می‌گویی؛ یک مدلِ کوچکِ محلی همه‌چیز را دوباره مرتب می‌کند و دلیل، مقصر را مشخص می‌کند. روی کامپیوترِ خودت، بدونِ کلیدِ API و بدونِ توکنِ LLM، با انصراف، سقفِ روزانه و فاصله‌ی ۹۰روزه که لحظه‌ی ارسال دوباره بررسی می‌شوند — و عمداً بدونِ خودکارسازیِ لینکدین.",
+    tags: ["Python", "Local ML", "A/B · Thompson", "No API keys"],
+    url: "https://github.com/ParsaVictor/mardani",
+    image: "/images/project-reachdesk.jpg",
+    stars: 0,
+    stat: "0 keys · 0 tokens",
+    accent: "#ffb454",
+  },
+  {
     id: "b2b",
     created: "2026-07-06T07:55:16Z",
     kind: "product",
@@ -479,6 +561,13 @@ export const groupOf = (id: string): Group =>
 
 export const desc = (p: Project, lang: Lang) =>
   lang === "fa" ? p.descFa : p.descEn;
+
+/** Projects that carry a recorded demo — the reel. */
+export const videoProjects: Project[] = allProjects.filter((p) => p.video);
+
+/** 82 → "1:22" */
+export const clock = (sec: number) =>
+  Math.floor(sec / 60) + ":" + String(Math.round(sec % 60)).padStart(2, "0");
 
 export const domain = (p: Project, lang: Lang) =>
   lang === "fa" ? p.domainFa : p.domainEn;

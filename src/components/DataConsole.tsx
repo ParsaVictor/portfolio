@@ -12,6 +12,7 @@ import { clamp, digits } from "../lib/num";
 import { useHandover } from "../scroll/useHandover";
 import { openProject, shouldOpenInPage } from "../state/projectModal";
 import ProjectCover from "./ProjectCover";
+import VideoMark from "./VideoMark";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -158,8 +159,9 @@ function FocusRow({
             className="transition-transform duration-700 group-hover:scale-[1.04]"
           />
         )}
+        <VideoMark project={project} />
         <span
-          className="absolute bottom-2 start-2 rounded-md px-2 py-0.5 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
+          className="absolute bottom-2 start-2 z-[8] rounded-md px-2 py-0.5 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
           style={{ background: "rgba(8,7,6,0.7)", color: project.accent }}
         >
           {project.stat}

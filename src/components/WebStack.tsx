@@ -11,6 +11,7 @@ import { useScrub } from "../scroll/useScrub";
 import { useHandover } from "../scroll/useHandover";
 import { clamp } from "../lib/num";
 import { openProject, shouldOpenInPage } from "../state/projectModal";
+import VideoMark from "./VideoMark";
 import FeaturedBadge, { NewBadge } from "./FeaturedBadge";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -255,8 +256,9 @@ function BrowserCard({
             {project.title.slice(0, 2).toUpperCase()}
           </div>
         )}
+        <VideoMark project={project} />
         <span
-          className="absolute bottom-3 start-3 rounded-md px-2 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
+          className="absolute bottom-3 start-3 z-[8] rounded-md px-2 py-1 font-mono text-[10px] tracking-widest backdrop-blur-sm ltr"
           style={{ background: "rgba(8,7,6,0.72)", color: project.accent }}
         >
           {project.stat}

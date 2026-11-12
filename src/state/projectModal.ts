@@ -9,7 +9,20 @@ import type { Project } from "../data/projects";
 let current: Project | null = null;
 const listeners = new Set<(p: Project | null) => void>();
 
-export function openProject(p: Project) {
+/**
+ * Set when the overlay was opened from a play button rather than from the card
+ * itself: the visitor already asked for the film, so it starts at once. Read
+ * (and cleared) by the overlay when it mounts the project.
+ */
+let autoplay = false;
+export function takeAutoplay() {
+  const a = autoplay;
+  autoplay = false;
+  return a;
+}
+
+export function openProject(p: Project, opts?: { autoplay?: boolean }) {
+  autoplay = !!opts?.autoplay && !!p.video;
   current = p;
   listeners.forEach((l) => l(current));
 }
